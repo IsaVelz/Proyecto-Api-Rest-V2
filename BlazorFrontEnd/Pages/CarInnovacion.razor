@@ -1,0 +1,518 @@
+@page "/car_innovacion"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Car Innovaciones</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarCarInnovacion" class="btn btn-success" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Nueva</span>
+                        </a>
+                        <a href="#modalConsultarCarInnovacion" class="btn btn-success" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (carInnovaciones == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!carInnovaciones.Any())
+            {
+                <p>No hay car innovaciones registradas.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var carInnovacion in carInnovaciones)
+                        {
+                            <tr>
+                                <td>@carInnovacion["id"]</td>
+                                <td>@carInnovacion["nombre"]</td>
+                                <td>@carInnovacion["tipo"]</td>
+                                <td>@carInnovacion["descripcion"]</td>
+                                <td>
+                                    <a href="#modalAgregarCarInnovacion" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(carInnovacion)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                    <a href="#modalEliminarCarInnovacion" class="delete" data-bs-toggle="modal" @onclick="() => AsignarCarInnovacionParaEliminar(carInnovacion)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Añadir/Editar Car Innovación -->
+<div class="modal fade" id="modalAgregarCarInnovacion" tabindex="-1" role="dialog" aria-labelledby="modalAgregarCarInnovacionLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@carInnovacionActual" OnValidSubmit="GuardarCarInnovacion">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarCarInnovacionLabel">@(esNuevaCarInnovacion? "Añadir" : "Editar") Car Innovación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Id</label>
+                        <InputText class="form-control" @bind-Value="id" />
+                        <ValidationMessage For="@(() => id)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <InputText class="form-control" @bind-Value="nombre" />
+                        <ValidationMessage For="@(() => nombre)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <InputTextArea class="form-control" @bind-Value="descripcion" />
+                        <ValidationMessage For="@(() => descripcion)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <InputText class="form-control" @bind-Value="tipo" />
+                        <ValidationMessage For="@(() => tipo)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevaCarInnovacion ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar Car Innovación -->
+<div class="modal fade" id="modalEliminarCarInnovacion" tabindex="-1" role="dialog" aria-labelledby="modalEliminarCarInnovacionLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarCarInnovacionLabel">Eliminar Car Innovación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar esta Car Innovación?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CancelarEliminacion">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarCarInnovacion">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Consultar Car Innovación -->
+<div class="modal fade" id="modalConsultarCarInnovacion" tabindex="-1" role="dialog" aria-labelledby="modalConsultarCarInnovacionLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarCarInnovacionLabel">Consultar Car Innovación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" class="form-control" @bind="consultaId" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" @bind="consultaNombre" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" class="form-control" @bind="consultaDescripcion" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <input type="text" class="form-control" @bind="consultaTipo" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarCarInnovacion">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarCarInnovacionConsultada" disabled="@(!carInnovacionEncontrada)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarCarInnovacionConsultada" disabled="@(!carInnovacionEncontrada)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> carInnovaciones = new List<Dictionary<string, object>>();
+    // Lista que almacena las car innovaciones obtenidas desde la API
+    
+    private Dictionary<string, object> carInnovacionActual = new Dictionary<string, object>();
+    // Diccionario que representa la car innovación actual que se está añadiendo o editando
+
+    private bool esNuevaCarInnovacion = true;
+    // Bandera que indica si se está añadiendo una nueva car innovación o editando una existente
+
+    private bool carInnovacionEncontrada = false;
+    // Bandera que indica si una car innovación fue encontrada durante la consulta
+
+    private string id = "";
+    // Variable que almacena el id de la car innovación durante la edición o creación
+
+    private string nombre = "";
+    // Variable que almacena el nombre de la car innovación durante la edición o creación
+
+    private string descripcion = "";
+    // Variable que almacena la descripción de la car innovación durante la edición o creación
+
+    private string tipo = "";
+    // Variable que almacena el tipo de la car innovación durante la edición o creación
+
+    private string consultaId = "";
+    // Variable que almacena el id de la car innovación que se va a consultar
+
+    private string consultaNombre = "";
+    // Variable que almacena el nombre de la car innovación que se encontró durante la consulta
+
+    private string consultaDescripcion = "";
+    // Variable que almacena la descripción de la car innovación que se encontró durante la consulta
+
+    private string consultaTipo = "";
+    // Variable que almacena el tipo de la car innovación que se encontró durante la consulta
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCarInnovaciones();
+        // Método que se ejecuta al inicializar el componente. Carga la lista de car innovaciones desde la API.
+    }
+
+    private async Task CancelarEliminacion()
+    {
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarCarInnovacion");
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+    }
+
+    private async Task CargarCarInnovaciones()
+    {
+        try
+        {
+            carInnovaciones = await ServicioApi.GetDataAsync("api/proyecto/car_innovacion");
+            carInnovaciones = carInnovaciones.Where(u => !(bool)(u["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            // Llama a la API para obtener la lista de car innovaciones y la almacena en la variable 'carInnovaciones'.
+            StateHasChanged(); // Fuerza la actualización de la UI después de cargar los datos.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar car innovaciones: {ex.Message}");
+            // Opcional: Log error en vez de mostrar alerta
+            // await ServicioJS.InvokeVoidAsync("console.log", "Error al cargar car innovaciones."); 
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? carInnovacion = null)
+    {
+        esNuevaCarInnovacion = carInnovacion == null;
+        // Si 'carInnovacion' es null, significa que estamos añadiendo una nueva car innovación. De lo contrario, estamos editando.
+        carInnovacionActual = carInnovacion ?? new Dictionary<string, object>();
+        // Si 'carInnovacion' es null, inicializamos un nuevo diccionario. De lo contrario, usamos el diccionario de la car innovación seleccionada.
+
+        id = carInnovacionActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = carInnovacionActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        descripcion = carInnovacionActual.TryGetValue("descripcion", out var d) ? d?.ToString() ?? "" : "";
+        tipo = carInnovacionActual.TryGetValue("tipo", out var t) ? t?.ToString() ?? "" : "";
+        // Extrae los valores de 'id', 'nombre', 'descripcion' y 'tipo' de 'carInnovacionActual' y los asigna a las variables correspondientes.
+        if (esNuevaCarInnovacion) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarCarInnovacion");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarCarInnovacion");
+        }
+        // Muestra el modal para añadir o editar car innovación usando JavaScript.
+    }
+
+private void PrepararParaEditar(Dictionary<string, object>? carInnovacion = null)
+{
+    esNuevaCarInnovacion = carInnovacion == null;
+    // Si 'carInnovacion' es null, significa que estamos añadiendo una nueva car innovación. De lo contrario, estamos editando.
+    carInnovacionActual = carInnovacion ?? new Dictionary<string, object>();
+    // Si 'carInnovacion' es null, inicializamos un nuevo diccionario. De lo contrario, usamos el diccionario de la car innovación seleccionada.
+
+    id = carInnovacionActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+    nombre = carInnovacionActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+    descripcion = carInnovacionActual.TryGetValue("descripcion", out var d) ? d?.ToString() ?? "" : "";
+    tipo = carInnovacionActual.TryGetValue("tipo", out var t) ? t?.ToString() ?? "" : "";
+    // Extrae los valores de 'id', 'nombre', 'descripcion' y 'tipo' de 'carInnovacionActual' y los asigna a las variables correspondientes.
+    
+    ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarCarInnovacion");
+    // Esconde el modal para editar car innovación usando JavaScript.
+}
+
+private void PrepararParaConsulta()
+{
+    consultaId = "";
+    consultaNombre = "";
+    consultaDescripcion = "";
+    consultaTipo = "";
+    carInnovacionEncontrada = false;
+    // Limpia los campos de consulta y establece 'carInnovacionEncontrada' en false.
+}
+
+private void AsignarCarInnovacionParaEliminar(Dictionary<string, object> carInnovacion)
+{
+    carInnovacionActual = carInnovacion;
+    // Aquí asegúrate de que todos los datos de la car innovación seleccionada se estén asignando correctamente
+    Console.WriteLine($"Car Innovación seleccionada para eliminar: Id: {carInnovacionActual["id"]}, Nombre: {carInnovacionActual["nombre"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarCarInnovacion");
+    // Muestra el modal para confirmar la eliminación usando JavaScript.
+}
+
+private async Task GuardarCarInnovacion()
+{
+    try
+    {
+        carInnovacionActual["id"] = id;
+        carInnovacionActual["nombre"] = nombre;
+        carInnovacionActual["descripcion"] = descripcion;
+        carInnovacionActual["tipo"] = tipo;
+        // Actualiza 'carInnovacionActual' con los valores actuales de los campos de entrada.
+
+        bool exito;
+        if (esNuevaCarInnovacion)
+        {
+            exito = await ServicioApi.AddEntityAsync("api/proyecto/car_innovacion", carInnovacionActual);
+            // Si estamos añadiendo una nueva car innovación, llama a la API para añadir la nueva car innovación.
+        }
+        else
+        {
+            exito = await ServicioApi.EditEntityAsync("api/proyecto/car_innovacion/id", id, carInnovacionActual);
+            // Si estamos editando una car innovación existente, llama a la API para editarla.
+        }
+
+        if (exito)
+        {
+            await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarCarInnovacion");
+            // Si la operación tiene éxito, cierra el modal.
+
+            await CargarCarInnovaciones();
+            // Recarga la lista de car innovaciones para reflejar los cambios.
+
+            id = nombre = descripcion = tipo = string.Empty;
+            carInnovacionActual = new Dictionary<string, object>();
+            esNuevaCarInnovacion = true;
+            // Limpia los campos del formulario y restablece el estado.
+
+            StateHasChanged();
+            // Fuerza la actualización de la UI.
+
+            await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            // Muestra un mensaje de éxito al usuario.
+        }
+        else
+        {
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la car innovación. Por favor, intente nuevamente.");
+            // Si la operación falla, muestra un mensaje de error.
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al guardar car innovación: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la car innovación. Por favor, intente nuevamente.");
+        // Muestra un error en la consola y una alerta si hay una excepción durante el guardado.
+    }
+}
+
+private async Task EliminarCarInnovacion()
+{
+    try
+    {
+        if (carInnovacionActual.TryGetValue("id", out var idObj) && idObj is string idStr)
+        {
+            carInnovacionActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/car_innovacion/id", idStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarCarInnovacion");
+                await CargarCarInnovaciones();
+                await ServicioJS.InvokeVoidAsync("alert", "Car Innovación eliminada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la car innovación. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar car innovación: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la car innovación. Por favor, intente nuevamente.");
+    }
+}
+
+private async Task ConsultarCarInnovacion()
+{
+    try
+    {
+        var resultado = await ServicioApi.GetDataAsync($"api/proyecto/car_innovacion/id/{consultaId}");
+        if (resultado.Any())
+        {
+            var carInnovacionConsultada = resultado.First();
+            consultaNombre = carInnovacionConsultada["nombre"]?.ToString() ?? "";
+            consultaDescripcion = carInnovacionConsultada["descripcion"]?.ToString() ?? "";
+            consultaTipo = carInnovacionConsultada["tipo"]?.ToString() ?? "";
+            carInnovacionEncontrada = true;
+            // Si se encuentra una car innovación con el id consultado, muestra los datos en los campos correspondientes.
+        }
+        else
+        {
+            consultaNombre = "";
+            consultaDescripcion = "";
+            consultaTipo = "";
+            carInnovacionEncontrada = false;
+            await ServicioJS.InvokeVoidAsync("alert", "No se encontró ninguna car innovación con ese id.");
+            // Si no se encuentra ninguna car innovación, limpia los campos y muestra un mensaje de alerta.
+        }
+        StateHasChanged();
+        // Fuerza la actualización de la UI para reflejar los cambios.
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al consultar car innovación: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al consultar la car innovación. Por favor, intente nuevamente.");
+        // Muestra un error en la consola y una alerta si hay una excepción durante la consulta.
+    }
+}
+
+private async Task ModificarCarInnovacionConsultada()
+{
+    PrepararParaAgregarOEditar(new Dictionary<string, object>
+    {
+        ["id"] = consultaId,
+        ["nombre"] = consultaNombre,
+        ["descripcion"] = consultaDescripcion,
+        ["tipo"] = consultaTipo
+    });
+    await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarCarInnovacion");
+    // Prepara los datos consultados para la edición y cierra el modal de consulta.
+}
+
+private async Task EliminarCarInnovacionConsultada()
+{
+    AsignarCarInnovacionParaEliminar(new Dictionary<string, object>
+    {
+        ["id"] = consultaId,
+        ["nombre"] = consultaNombre,
+        ["descripcion"] = consultaDescripcion,
+        ["tipo"] = consultaTipo
+    });
+    await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarCarInnovacion");
+    // Prepara los datos consultados para la eliminación y cierra el modal de consulta.
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

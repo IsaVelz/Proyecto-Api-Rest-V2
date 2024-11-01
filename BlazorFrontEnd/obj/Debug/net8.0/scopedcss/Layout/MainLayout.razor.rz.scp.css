@@ -1,0 +1,88 @@
+.page[b-msf2p0x9on] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main[b-msf2p0x9on] {
+    flex: 1;
+}
+
+/* Barra lateral estilizada con los nuevos colores */
+.sidebar[b-msf2p0x9on] {
+    background-image: linear-gradient(180deg, #4C45A0 0%, #4a5267 70%);
+    color: white;
+}
+
+/* Parte superior con un fondo más suave para combinar con la barra lateral */
+.top-row[b-msf2p0x9on] {
+    background-color: #BCA6DA;
+    border-bottom: 1px solid #4C45A0;
+    justify-content: flex-end;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Estilos para los enlaces dentro de la barra superior */
+.top-row[b-msf2p0x9on]  a, .top-row[b-msf2p0x9on]  .btn-link {
+    white-space: nowrap;
+    margin-left: 1.5rem;
+    text-decoration: none;
+    color: #4C45A0; /* Enlaces en la barra superior */
+}
+
+/* Enlaces con hover */
+.top-row[b-msf2p0x9on]  a:hover, .top-row[b-msf2p0x9on]  .btn-link:hover {
+    text-decoration: underline;
+    color: #3a0647; /* Un tono más oscuro en hover para resaltar */
+}
+
+/* Estilo de los enlaces para manejar overflow */
+.top-row[b-msf2p0x9on]  a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Adaptaciones para pantallas pequeñas */
+@media (max-width: 640.98px) {
+    .top-row[b-msf2p0x9on] {
+        justify-content: space-between;
+    }
+
+    .top-row[b-msf2p0x9on]  a, .top-row[b-msf2p0x9on]  .btn-link {
+        margin-left: 0;
+    }
+}
+
+/* Adaptaciones para pantallas grandes */
+@media (min-width: 641px) {
+    .page[b-msf2p0x9on] {
+        flex-direction: row;
+    }
+
+    .sidebar[b-msf2p0x9on] {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        color: white; /* Texto blanco para mejor contraste */
+    }
+
+    .top-row[b-msf2p0x9on] {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .top-row.auth[b-msf2p0x9on]  a:first-child {
+        flex: 1;
+        text-align: right;
+        width: 0;
+    }
+
+    .top-row[b-msf2p0x9on], article[b-msf2p0x9on] {
+        padding-left: 2rem !important;
+        padding-right: 1.5rem !important;
+    }
+}

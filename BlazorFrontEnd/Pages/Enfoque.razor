@@ -1,0 +1,497 @@
+@page "/enfoque"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Enfoques</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarEnfoque" class="btn btn-success" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Nuevo</span>
+                        </a>
+                        <a href="#modalConsultarEnfoque" class="btn btn-success" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (enfoques == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!enfoques.Any())
+            {
+                <p>No hay Enfoques registrados.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var enfoque in enfoques)
+                        {
+                            <tr>
+                                <td>@enfoque["id"]</td>
+                                <td>@enfoque["nombre"]</td>
+                                <td>@enfoque["descripcion"]</td>
+                                <td>
+                                    <a href="#modalAgregarEnfoque" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(enfoque)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                    <a href="#modalEliminarEnfoque" class="delete" data-bs-toggle="modal" @onclick="() => AsignarEnfoqueParaEliminar(enfoque)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Añadir/Editar Enfoque -->
+<div class="modal fade" id="modalAgregarEnfoque" tabindex="-1" role="dialog" aria-labelledby="modalAgregarEnfoqueLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@enfoqueActual" OnValidSubmit="GuardarEnfoque">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarEnfoqueLabel">@(esNuevoEnfoque ? "Añadir" : "Editar") Enfoque</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Id</label>
+                        <InputText class="form-control" @bind-Value="id" />
+                        <ValidationMessage For="@(() => id)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <InputText class="form-control" @bind-Value="nombre" />
+                        <ValidationMessage For="@(() => nombre)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <InputText class="form-control" @bind-Value="descripcion" />
+                        <ValidationMessage For="@(() => descripcion)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevoEnfoque ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar Enfoque -->
+<div class="modal fade" id="modalEliminarEnfoque" tabindex="-1" role="dialog" aria-labelledby="modalEliminarEnfoqueLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarEnfoqueLabel">Eliminar Enfoque</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar este Enfoque?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CancelarEliminacion">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarEnfoque">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Consultar Enfoque -->
+<div class="modal fade" id="modalConsultarEnfoque" tabindex="-1" role="dialog" aria-labelledby="modalConsultarEnfoqueLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarEnfoqueLabel">Consultar Enfoque</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" class="form-control" @bind="consultaId" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" @bind="consultaNombre" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <input type="text" class="form-control" @bind="consultaDescripcion" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarEnfoque">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarEnfoqueConsultado" disabled="@(!enfoqueEncontrado)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarEnfoqueConsultado" disabled="@(!enfoqueEncontrado)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> enfoques = new List<Dictionary<string, object>>();
+    // Lista que almacena los enfoques obtenidos desde la API
+
+    private Dictionary<string, object> enfoqueActual = new Dictionary<string, object>();
+    // Diccionario que representa el enfoque actual que se está añadiendo o editando
+
+    private bool esNuevoEnfoque = true;
+    // Bandera que indica si se está añadiendo un nuevo enfoque o editando uno existente
+
+    private bool enfoqueEncontrado = false;
+    // Bandera que indica si un enfoque fue encontrado durante la consulta
+
+    private string id = "";
+    // Variable que almacena el id del enfoque durante la edición o creación
+
+    private string nombre = "";
+    // Variable que almacena el nombre del enfoque durante la edición o creación
+
+    private string descripcion = "";
+    // Variable que almacena la descripción del enfoque durante la edición o creación
+
+    private string consultaId = "";
+    // Variable que almacena el id del enfoque que se va a consultar
+
+    private string consultaNombre = "";
+    // Variable que almacena el nombre del enfoque que se encontró durante la consulta
+
+    private string consultaDescripcion = "";
+    // Variable que almacena la descripción del enfoque que se encontró durante la consulta
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarEnfoques();
+        // Método que se ejecuta al inicializar el componente. Carga la lista de enfoques desde la API.
+    }
+
+    private async Task CancelarEliminacion()
+    {
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarEnfoque");
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+    }
+
+    private async Task CargarEnfoques()
+    {
+        try
+        {
+            enfoques = await ServicioApi.GetDataAsync("api/proyecto/enfoque");
+            enfoques = enfoques.Where(e => !(bool)(e["IsDeleted"] ?? false)).ToList(); // Filtra solo los enfoques activos
+
+            // Llama a la API para obtener la lista de enfoques y la almacena en la variable 'enfoques'.
+            StateHasChanged(); // Fuerza la actualización de la UI después de cargar los datos.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar enfoques: {ex.Message}");
+            // Opcional: Log error en vez de mostrar alerta
+            // await ServicioJS.InvokeVoidAsync("console.log", "Error al cargar enfoques.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? enfoque = null)
+    {
+        esNuevoEnfoque = enfoque == null;
+        // Si 'enfoque' es null, significa que estamos añadiendo un nuevo enfoque. De lo contrario, estamos editando.
+        enfoqueActual = enfoque ?? new Dictionary<string, object>();
+        // Si 'enfoque' es null, inicializamos un nuevo diccionario. De lo contrario, usamos el diccionario del enfoque seleccionado.
+
+        id = enfoqueActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = enfoqueActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        descripcion = enfoqueActual.TryGetValue("descripcion", out var d) ? d?.ToString() ?? "" : "";
+        // Extrae los valores de 'id', 'nombre', y 'descripcion' de 'enfoqueActual' y los asigna a las variables correspondientes.
+
+        if (esNuevoEnfoque)
+        {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarEnfoque");
+        }
+        else
+        {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarEnfoque");
+        }
+        // Muestra el modal para añadir o editar enfoque usando JavaScript.
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? enfoque = null)
+    {
+        esNuevoEnfoque = enfoque == null;
+        // Si 'enfoque' es null, significa que estamos añadiendo un nuevo enfoque. De lo contrario, estamos editando.
+        enfoqueActual = enfoque ?? new Dictionary<string, object>();
+        // Si 'enfoque' es null, inicializamos un nuevo diccionario. De lo contrario, usamos el diccionario del enfoque seleccionado.
+
+        id = enfoqueActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = enfoqueActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        descripcion = enfoqueActual.TryGetValue("descripcion", out var d) ? d?.ToString() ?? "" : "";
+        // Extrae los valores de 'id', 'nombre', y 'descripcion' de 'enfoqueActual' y los asigna a las variables correspondientes.
+
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarEnfoque");
+        // Esconde el modal para editar enfoque usando JavaScript.
+    }
+private void PrepararParaConsulta()
+{
+    consultaId = "";
+    consultaNombre = "";
+    consultaDescripcion = "";
+    enfoqueEncontrado = false;
+    // Limpia los campos de consulta y establece 'enfoqueEncontrado' en false.
+}
+
+private void AsignarEnfoqueParaEliminar(Dictionary<string, object> enfoque)
+{
+    enfoqueActual = enfoque;
+    // Aquí asegúrate de que todos los datos del enfoque seleccionado se estén asignando correctamente
+    Console.WriteLine($"Enfoque seleccionado para eliminar: Id: {enfoqueActual["id"]}, Nombre: {enfoqueActual["nombre"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarEnfoque");
+    // Muestra el modal para confirmar la eliminación usando JavaScript.
+}
+
+private async Task GuardarEnfoque()
+{
+    try
+    {
+        enfoqueActual["id"] = id;
+        enfoqueActual["nombre"] = nombre;
+        enfoqueActual["descripcion"] = descripcion;
+        // Actualiza 'enfoqueActual' con los valores actuales de los campos de entrada.
+
+        bool exito;
+        if (esNuevoEnfoque)
+        {
+            exito = await ServicioApi.AddEntityAsync("api/proyecto/enfoque", enfoqueActual);
+            // Si estamos añadiendo un nuevo enfoque, llama a la API para añadir el nuevo enfoque.
+        }
+        else
+        {
+            exito = await ServicioApi.EditEntityAsync("api/proyecto/enfoque/id", id, enfoqueActual);
+            // Si estamos editando un enfoque existente, llama a la API para editarlo.
+        }
+
+        if (exito)
+        {
+            await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarEnfoque");
+            // Si la operación tiene éxito, cierra el modal.
+
+            await CargarEnfoques();
+            // Recarga la lista de enfoques para reflejar los cambios.
+
+            id = nombre = descripcion = string.Empty;
+            enfoqueActual = new Dictionary<string, object>();
+            esNuevoEnfoque = true;
+            // Limpia los campos del formulario y restablece el estado.
+
+            StateHasChanged();
+            // Fuerza la actualización de la UI.
+
+            await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            // Muestra un mensaje de éxito al usuario.
+        }
+        else
+        {
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el enfoque. Por favor, intente nuevamente.");
+            // Si la operación falla, muestra un mensaje de error.
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al guardar enfoque: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el enfoque. Por favor, intente nuevamente.");
+        // Muestra un error en la consola y una alerta si hay una excepción durante el guardado.
+    }
+}
+
+private async Task EliminarEnfoque()
+{
+    try
+    {
+        if (enfoqueActual.TryGetValue("id", out var idObj) && idObj is string idStr)
+        {
+            enfoqueActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/enfoque/id", idStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarEnfoque");
+                await CargarEnfoques();
+                await ServicioJS.InvokeVoidAsync("alert", "Enfoque eliminado con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el enfoque. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar enfoque: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el enfoque. Por favor, intente nuevamente.");
+    }
+}
+
+private async Task ConsultarEnfoque()
+{
+    try
+    {
+        var resultado = await ServicioApi.GetDataAsync($"api/proyecto/enfoque/id/{consultaId}");
+        if (resultado.Any())
+        {
+            var enfoqueConsultado = resultado.First();
+            consultaNombre = enfoqueConsultado["nombre"]?.ToString() ?? "";
+            consultaDescripcion = enfoqueConsultado["descripcion"]?.ToString() ?? "";
+            enfoqueEncontrado = true;
+            // Si se encuentra un enfoque con el id consultado, muestra los datos en los campos correspondientes.
+        }
+        else
+        {
+            consultaNombre = "";
+            consultaDescripcion = "";
+            enfoqueEncontrado = false;
+            await ServicioJS.InvokeVoidAsync("alert", "No se encontró ningún enfoque con ese id.");
+            // Si no se encuentra ningún enfoque, limpia los campos y muestra un mensaje de alerta.
+        }
+        StateHasChanged();
+        // Fuerza la actualización de la UI para reflejar los cambios.
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al consultar enfoque: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al consultar el enfoque. Por favor, intente nuevamente.");
+        // Muestra un error en la consola y una alerta si hay una excepción durante la consulta.
+    }
+}
+
+private async Task ModificarEnfoqueConsultado()
+{
+    PrepararParaAgregarOEditar(new Dictionary<string, object>
+    {
+        ["id"] = consultaId,
+        ["nombre"] = consultaNombre,
+        ["descripcion"] = consultaDescripcion
+    });
+    await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarEnfoque");
+    // Prepara los datos consultados para la edición y cierra el modal de consulta.
+}
+
+private async Task EliminarEnfoqueConsultado()
+{
+    AsignarEnfoqueParaEliminar(new Dictionary<string, object>
+    {
+        ["id"] = consultaId,
+        ["nombre"] = consultaNombre,
+        ["descripcion"] = consultaDescripcion
+    });
+    await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarEnfoque");
+    // Prepara los datos consultados para la eliminación y cierra el modal de consulta.
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

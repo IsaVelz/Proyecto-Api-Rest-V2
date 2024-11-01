@@ -1,0 +1,19 @@
+{
+  "Version": 1,
+  "Hash": "c5C+BNj9xrQ8r3MvqCugVor2dWb1ANaQUHT5HiW+MEo=",
+  "Source": "ProyectoBackendCsharp",
+  "BasePath": "_content/ProyectoBackendCsharp",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "ProyectoBackendCsharp\\wwwroot",
+      "Source": "ProyectoBackendCsharp",
+      "ContentRoot": "C:\\Users\\Isabel Velez\\Desktop\\Proyecto Innovacion\\Proyecto Innovacion\\ProyectoBackendCsharp\\wwwroot\\",
+      "BasePath": "_content/ProyectoBackendCsharp",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": []
+}

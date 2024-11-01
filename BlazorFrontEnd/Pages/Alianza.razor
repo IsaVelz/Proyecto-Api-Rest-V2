@@ -1,0 +1,504 @@
+@page "/alianza"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Alianzas</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarAlianza" class="btn btn-success" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Nueva</span>
+                        </a>
+                        <!-- Botón que abre el modal para añadir una nueva alianza -->
+
+                        <a href="#modalConsultarAlianza" class="btn btn-success" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar</span>
+                        </a>
+                        <!-- Botón que abre el modal para consultar una alianza existente -->
+                    </div>
+                </div>
+            </div>
+            @if (alianzas == null)
+            {
+                <p>Cargando...</p>
+                <!-- Muestra un mensaje mientras se cargan los datos -->
+            }
+            else if (!alianzas.Any())
+            {
+                <p>No hay Alianzas registradas.</p>
+                <!-- Muestra un mensaje si no hay alianzas en la lista -->
+            }
+            else
+            {
+                <!-- Muestra la tabla con la lista de alianzas si la lista contiene datos -->
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Aliado</th>
+                            <th>Programa</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var alianza in alianzas)
+                        {
+                            <tr>
+                                <td>@alianza["aliado"]</td>
+                                <td>@alianza["programa"]</td>
+                                <td>@alianza["fecha_inicio"]</td>
+                                <td>@alianza["fecha_fin"]</td>
+                                <td>
+                                    <a href="#modalAgregarAlianza" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(alianza)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                    <!-- Botón para editar la alianza -->
+                                    <a href="#modalEliminarAlianza" class="delete" data-bs-toggle="modal" @onclick="() => AsignarAlianzaParaConsultar(alianza)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+                                    <!-- Botón para eliminar la alianza -->
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Añadir/Editar Alianza -->
+<div class="modal fade" id="modalAgregarAlianza" tabindex="-1" role="dialog" aria-labelledby="modalAgregarAlianzaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@alianzaActual" OnValidSubmit="GuardarAlianza">
+                <DataAnnotationsValidator />
+                <!-- Valida los campos del formulario usando anotaciones de datos en C# -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarAlianzaLabel">@(esNuevaAlianza ? "Añadir" : "Editar") Alianza</h5>
+                    <!-- El título del modal cambia según si se está añadiendo o editando una alianza -->
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Campos del formulario para ingresar los datos de la alianza -->
+                    <div class="form-group">
+                        <label>Aliado</label>
+                        <InputText class="form-control" @bind-Value="aliado" />
+                        <ValidationMessage For="@(() => aliado)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Programa</label>
+                        <InputText class="form-control" @bind-Value="programa" />
+                        <ValidationMessage For="@(() => programa)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Inicio</label>
+                        <InputText type="date" class="form-control" @bind-Value="fechaInicio" />
+                        <ValidationMessage For="@(() => fechaInicio)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Fin</label>
+                        <InputText type="date" class="form-control" @bind-Value="fechaFin" />
+                        <ValidationMessage For="@(() => fechaFin)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevaAlianza ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar Alianza -->
+<div class="modal fade" id="modalEliminarAlianza" tabindex="-1" role="dialog" aria-labelledby="modalEliminarAlianzaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarAlianzaLabel">Eliminar Alianza</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar esta Alianza?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CancelarEliminacion">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarAlianza">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Consultar Alianza -->
+<div class="modal fade" id="modalConsultarAlianza" tabindex="-1" role="dialog" aria-labelledby="modalConsultarAlianzaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarAlianzaLabel">Consultar Alianza</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Aliado</label>
+                    <input type="text" class="form-control" @bind="consultaAliado" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Programa</label>
+                    <input type="text" class="form-control" @bind="consultaPrograma" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Fecha Inicio</label>
+                    <input type="text" class="form-control" @bind="consultaFechaInicio" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Fecha Fin</label>
+                    <input type="text" class="form-control" @bind="consultaFechaFin" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarAlianza">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarAlianzaConsultada" disabled="@(!alianzaEncontrada)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarAlianzaConsultada" disabled="@(!alianzaEncontrada)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> alianzas = new List<Dictionary<string, object>>();
+    // Lista que almacena las alianzas obtenidas desde la API
+
+    private Dictionary<string, object> alianzaActual = new Dictionary<string, object>();
+    // Diccionario que representa la alianza actual que se está añadiendo o editando
+
+    private bool esNuevaAlianza = true;
+    // Bandera que indica si se está añadiendo una nueva alianza o editando una existente
+
+    private bool alianzaEncontrada = false;
+    // Bandera que indica si una alianza fue encontrada durante la consulta
+
+    private string aliado = "";
+    // Variable que almacena el id del aliado durante la edición o creación
+
+    private string programa = "";
+    // Variable que almacena el programa de la alianza durante la edición o creación
+
+    private string fechaInicio = "";
+    // Variable que almacena la fecha de inicio de la alianza durante la edición o creación
+
+    private string fechaFin = "";
+    // Variable que almacena la fecha de fin de la alianza durante la edición o creación
+
+    private string consultaAliado = "";
+    // Variable que almacena el id del aliado que se va a consultar
+
+    private string consultaPrograma = "";
+    // Variable que almacena el programa de la alianza que se encontró durante la consulta
+
+    private string consultaFechaInicio = "";
+    // Variable que almacena la fecha de inicio de la alianza que se encontró durante la consulta
+
+    private string consultaFechaFin = "";
+    // Variable que almacena la fecha de fin de la alianza que se encontró durante la consulta
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAlianzas();
+        // Método que se ejecuta al inicializar el componente. Carga la lista de alianzas desde la API.
+    }
+
+    private async Task CargarAlianzas()
+    {
+        try
+        {
+            alianzas = await ServicioApi.GetDataAsync("api/proyecto/alianza");
+            alianzas = alianzas.Where(a => !(bool)(a["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            // Llama a la API para obtener la lista de alianzas y la almacena en la variable 'alianzas'.
+            StateHasChanged(); // Fuerza la actualización de la UI después de cargar los datos.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar alianzas: {ex.Message}");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? alianza = null)
+    {
+        esNuevaAlianza = alianza == null;
+        alianzaActual = alianza ?? new Dictionary<string, object>();
+
+        aliado = alianzaActual.TryGetValue("aliado", out var a) ? a?.ToString() ?? "" : "";
+        programa = alianzaActual.TryGetValue("programa", out var p) ? p?.ToString() ?? "" : "";
+        fechaInicio = alianzaActual.TryGetValue("fecha_inicio", out var fInicio) ? fInicio?.ToString() ?? "" : "";
+        fechaFin = alianzaActual.TryGetValue("fecha_fin", out var fFin) ? fFin?.ToString() ?? "" : "";
+
+        if (esNuevaAlianza)
+        {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAlianza");
+        }
+        else
+        {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarAlianza");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? alianza = null)
+    {
+        esNuevaAlianza = false;
+        alianzaActual = alianza ?? new Dictionary<string, object>();
+
+        aliado = alianzaActual.TryGetValue("aliado", out var a) ? a?.ToString() ?? "" : "";
+        programa = alianzaActual.TryGetValue("programa", out var p) ? p?.ToString() ?? "" : "";
+        fechaInicio = alianzaActual.TryGetValue("fecha_inicio", out var fInicio) ? fInicio?.ToString() ?? "" : "";
+        fechaFin = alianzaActual.TryGetValue("fecha_fin", out var fFin) ? fFin?.ToString() ?? "" : "";
+
+        ServicioJS.InvokeVoidAsync("showModal", "modalAgregarAlianza");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaAliado = "";
+        consultaPrograma = "";
+        consultaFechaInicio = "";
+        consultaFechaFin = "";
+        alianzaEncontrada = false;
+        // Limpia los campos de consulta y establece 'alianzaEncontrada' en false.
+    }
+
+    private void AsignarAlianzaParaConsultar(Dictionary<string, object> alianza)
+    {
+        consultaAliado = alianza.TryGetValue("aliado", out var a) ? a?.ToString() ?? "" : "";
+        consultaPrograma = alianza.TryGetValue("programa", out var p) ? p?.ToString() ?? "" : "";
+        consultaFechaInicio = alianza.TryGetValue("fecha_inicio", out var fInicio) ? fInicio?.ToString() ?? "" : "";
+        consultaFechaFin = alianza.TryGetValue("fecha_fin", out var fFin) ? fFin?.ToString() ?? "" : "";
+        alianzaEncontrada = true;
+        // Asigna los valores de la alianza seleccionada a las variables de consulta y establece 'alianzaEncontrada' en true.
+    }
+
+    private async Task GuardarAlianza()
+    {
+        try
+        {
+            alianzaActual["aliado"] = aliado;
+            alianzaActual["programa"] = programa;
+            alianzaActual["fecha_inicio"] = fechaInicio;
+            alianzaActual["fecha_fin"] = fechaFin;
+
+            bool exito;
+            if (esNuevaAlianza)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/alianza", alianzaActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/alianza/aliado", aliado, alianzaActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAlianza");
+                await CargarAlianzas();
+                aliado = programa = fechaInicio = fechaFin = string.Empty;
+                alianzaActual = new Dictionary<string, object>();
+                esNuevaAlianza = true;
+                StateHasChanged();
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la alianza. Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar alianza: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la alianza. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task EliminarAlianza()
+    {
+        try
+        {
+            if (alianzaActual.TryGetValue("aliado", out var aliadoObj) && aliadoObj is string aliadoStr)
+            {
+                alianzaActual["IsDeleted"] = true;
+                bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/alianza/aliado", aliadoStr);
+                if (exito)
+                {
+                    await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAlianza");
+                    await CargarAlianzas();
+                    await ServicioJS.InvokeVoidAsync("alert", "Alianza eliminada con éxito.");
+                }
+                else
+                {
+                    await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la alianza. Por favor, intente nuevamente.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar alianza: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la alianza. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ConsultarAlianza()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/alianza/aliado/{consultaAliado}");
+            if (resultado.Any())
+            {
+                var alianzaConsultada = resultado.First();
+                consultaPrograma = alianzaConsultada["programa"]?.ToString() ?? "";
+                consultaFechaInicio = alianzaConsultada["fecha_inicio"]?.ToString() ?? "";
+                consultaFechaFin = alianzaConsultada["fecha_fin"]?.ToString() ?? "";
+                alianzaEncontrada = true;
+            }
+            else
+            {
+                consultaPrograma = consultaFechaInicio = consultaFechaFin = "";
+                alianzaEncontrada = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ninguna alianza con ese aliado.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar alianza: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar la alianza. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarAlianzaConsultada()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["aliado"] = consultaAliado,
+            ["programa"] = consultaPrograma,
+            ["fecha_inicio"] = consultaFechaInicio,
+            ["fecha_fin"] = consultaFechaFin
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarAlianza");
+        // Prepara los datos consultados para la edición y cierra el modal de consulta.
+    }
+
+    private async Task EliminarAlianzaConsultada()
+    {
+        AsignarAlianzaParaConsultar(new Dictionary<string, object>
+        {
+            ["aliado"] = consultaAliado,
+            ["programa"] = consultaPrograma,
+            ["fecha_inicio"] = consultaFechaInicio,
+            ["fecha_fin"] = consultaFechaFin
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarAlianza");
+        // Prepara los datos consultados para la eliminación y cierra el modal de consulta.
+    }
+
+    private async Task CancelarEliminacion()
+    {
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAlianza");
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+        // Cancela la operación de eliminación y cierra el modal correspondiente.
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

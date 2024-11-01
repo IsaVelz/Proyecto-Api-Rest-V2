@@ -1,0 +1,634 @@
+@page "/registro_calificado"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Registros</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarRegistro" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Añadir Nuevo Registro</span>
+                        </a>
+                        <a href="#modalConsultarRegistro" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar Registro</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (registro_calificados == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!registro_calificados.Any())
+            {
+                <p>No hay Universidades registradas.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Cantidad De Creditos</th>
+                            <th>Hora Acom</th>
+                            <th>Hora Ind</th>
+                            <th>Metodologia</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Duracion en años</th>
+                            <th>Duracion Semestres</th>
+                            <th>Tipo De Titulacion</th>
+                            <th>fkfkprograma</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var registro_calificado in registro_calificados)
+                        {
+                            <tr>
+                                <td>@registro_calificado["codigo"]</td>
+                                <td>@registro_calificado["cant_creditos"]</td>
+                                <td>@registro_calificado["hora_acom"]</td>
+                                <td>@registro_calificado["hora_ind"]</td>
+                                <td>@registro_calificado["metodologia"]</td>
+                                <td>@registro_calificado["fecha_inicio"]</td>
+                                <td>@registro_calificado["fecha_fin"]</td>
+                                <td>@registro_calificado["duracion_anios"]</td>
+                                <td>@registro_calificado["duracion_semestres"]</td>
+                                <td>@registro_calificado["tipo_titulacion"]</td>
+                                <td>@registro_calificado["fkprograma"]</td>
+                                 
+                                <td>
+                                    <a href="#modalAgregarRegistro" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(registro_calificado)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                  <a href="#modalEliminarRegistro" class="delete" data-bs-toggle="modal" @onclick="() => AsignarRegistroParaEliminar(registro_calificado)">
+                                        <i class="bi bi-trash3" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarRegistro" tabindex="-1" role="dialog" aria-labelledby="modalAgregarRegistroLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@registro_calificadoActual" OnValidSubmit="GuardarRegistro">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarRegistroLabel">@(esNuevoRegistro? "Añadir" : "Editar") Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Codigo</label>
+                        <InputText class="form-control" @bind-Value="codigo" />
+                        <ValidationMessage For="@(() => codigo)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad de creditos</label>
+                        <InputText class="form-control" @bind-Value="cant_creditos" />
+                        <ValidationMessage For="@(() => cant_creditos)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Hora Acom</label>
+                        <InputText class="form-control" @bind-Value="hora_acom" />
+                        <ValidationMessage For="@(() => hora_acom)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Hora Ind</label>
+                        <InputText class="form-control" @bind-Value="hora_ind" />
+                        <ValidationMessage For="@(() => hora_ind)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Metodologia</label>
+                        <InputText class="form-control" @bind-Value="metodologia" />
+                        <ValidationMessage For="@(() => metodologia)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Inicio</label>
+                        <InputText class="form-control" @bind-Value="fecha_inicio" />
+                        <ValidationMessage For="@(() => fecha_inicio)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha de Fin</label>
+                        <InputText class="form-control" @bind-Value="fecha_fin" />
+                        <ValidationMessage For="@(() => fecha_fin)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Duracion En Años</label>
+                        <InputText class="form-control" @bind-Value="duracion_anios" />
+                        <ValidationMessage For="@(() => duracion_anios)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Duracion En Semestres</label>
+                        <InputText class="form-control" @bind-Value="duracion_semestres" />
+                        <ValidationMessage For="@(() => duracion_semestres)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo De Titulacion</label>
+                        <InputText class="form-control" @bind-Value="tipo_titulacion" />
+                        <ValidationMessage For="@(() => tipo_titulacion)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Programa</label>
+                        <InputText class="form-control" @bind-Value="fkprograma" />
+                        <ValidationMessage For="@(() => fkprograma)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevoRegistro ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarRegistro" tabindex="-1" role="dialog" aria-labelledby="modalEliminarRegistroLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarRegistroLabel">Eliminar Registro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea marcar este Registro como inactiva?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarRegistro">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsultarRegistro" tabindex="-1" role="dialog" aria-labelledby="modalConsultarRegistroLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarRegistroLabel">Consultar Registro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Código</label>
+                    <input type="text" class="form-control" @bind="consultaCodigo" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Cantidad de Creditos</label>
+                    <input type="text" class="form-control" @bind="consultaCant_creditos" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Hora de Acom</label>
+                    <input type="text" class="form-control" @bind="consultaHora_acom" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Hora de Ind</label>
+                    <input type="text" class="form-control" @bind="consultaHora_ind" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Metodologia</label>
+                    <input type="text" class="form-control" @bind="consultaMetodologia" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Inicio</label>
+                    <input type="text" class="form-control" @bind="consultaFecha_inicio" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Fin</label>
+                    <input type="text" class="form-control" @bind="consultaFecha_fin" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Duracion En Años</label>
+                    <input type="text" class="form-control" @bind="consultaDuracion_anios" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Duracion Semestres</label>
+                    <input type="text" class="form-control" @bind="consultaDuracion_semestres" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Titulacion</label>
+                    <input type="text" class="form-control" @bind="consultaTipo_titulacion" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Programa</label>
+                    <input type="text" class="form-control" @bind="consultafkprograma" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarRegistro">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarRegistroConsultado" disabled="@(!registroEncontrado)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarRegistroConsultada" disabled="@(!registroEncontrado)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> registro_calificados = new List<Dictionary<string, object>>();
+    
+    private Dictionary<string, object> registro_calificadoActual = new Dictionary<string, object>();
+
+    private bool esNuevoRegistro = true;
+
+    private bool registroEncontrado = false;
+
+    private string codigo = "";
+
+    private string cant_creditos = "";
+
+    private string hora_acom = "";
+
+    private string hora_ind = "";
+
+    private string metodologia = "";
+
+    private string fecha_inicio = "";
+
+    private string fecha_fin = "";
+
+    private string duracion_anios = "";
+    private string duracion_semestres = "";
+
+    private string tipo_titulacion = "";
+
+    private string fkprograma = "";
+
+
+    private string consultaCodigo = "";
+
+    private string consultaCant_creditos = "";
+
+    private string consultaHora_acom = "";
+
+    private string consultaHora_ind = "";
+
+    private string consultaMetodologia = "";
+
+    private string consultaFecha_inicio = "";
+
+    private string consultaFecha_fin = "";
+
+    private string consultaDuracion_anios = "";
+
+    private string consultaDuracion_semestres = "";
+
+    private string consultaTipo_titulacion = "";
+
+    private string consultafkprograma = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarRegistros();
+    }
+
+    private async Task CargarRegistros()
+    {
+        try
+        {
+            registro_calificados = await ServicioApi.GetDataAsync("api/proyecto/registro_calificado");
+            registro_calificados = registro_calificados.Where(u => (bool)(u["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar los registros: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al cargar los registros. Por favor, intente nuevamente.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? registro_calificado = null)
+    {
+        esNuevoRegistro = registro_calificado == null;
+        registro_calificadoActual = registro_calificado ?? new Dictionary<string, object>();
+
+        codigo = registro_calificadoActual.TryGetValue("codigo", out var c) ? c?.ToString() ?? "" : "";
+        cant_creditos = registro_calificadoActual.TryGetValue("cant_creditos", out var n) ? n?.ToString() ?? "" : "";
+        hora_acom = registro_calificadoActual.TryGetValue("hora_acom", out var e) ? e?.ToString() ?? "" : "";
+        hora_ind = registro_calificadoActual.TryGetValue("hora_ind", out var t) ? t?.ToString() ?? "" : "";
+        metodologia = registro_calificadoActual.TryGetValue("metodologia", out var m) ? m?.ToString() ?? "" : "";
+        fecha_inicio = registro_calificadoActual.TryGetValue("fecha_inicio", out var f) ? f?.ToString() ?? "" : "";
+        fecha_fin = registro_calificadoActual.TryGetValue("fecha_fin", out var ff) ? ff?.ToString() ?? "" : "";
+        duracion_anios = registro_calificadoActual.TryGetValue("duracion_anios", out var d) ? d?.ToString() ?? "" : "";
+        duracion_semestres = registro_calificadoActual.TryGetValue("duracion_semestres", out var dd) ? dd?.ToString() ?? "" : "";
+        tipo_titulacion = registro_calificadoActual.TryGetValue("tipo_titulacion", out var tt) ? tt?.ToString() ?? "" : "";
+        fkprograma = registro_calificadoActual.TryGetValue("fkprograma", out var p) ? p?.ToString() ?? "" : "";
+        if(esNuevoRegistro) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarRegistro");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarRegistro");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? registro_calificado = null)
+    {
+        esNuevoRegistro = registro_calificado == null;
+        registro_calificadoActual = registro_calificado ?? new Dictionary<string, object>();
+
+        codigo = registro_calificadoActual.TryGetValue("codigo", out var c) ? c?.ToString() ?? "" : "";
+        cant_creditos = registro_calificadoActual.TryGetValue("cant_creditos", out var n) ? n?.ToString() ?? "" : "";
+        hora_acom = registro_calificadoActual.TryGetValue("hora_acom", out var e) ? e?.ToString() ?? "" : "";
+        hora_ind = registro_calificadoActual.TryGetValue("hora_ind", out var t) ? t?.ToString() ?? "" : "";
+        metodologia = registro_calificadoActual.TryGetValue("metodologia", out var m) ? m?.ToString() ?? "" : "";
+        fecha_inicio = registro_calificadoActual.TryGetValue("fecha_inicio", out var f) ? f?.ToString() ?? "" : "";
+        fecha_fin = registro_calificadoActual.TryGetValue("fecha_fin", out var ff) ? ff?.ToString() ?? "" : "";
+        duracion_anios = registro_calificadoActual.TryGetValue("duracion_anios", out var d) ? d?.ToString() ?? "" : "";
+        duracion_semestres = registro_calificadoActual.TryGetValue("duracion_semestres", out var dd) ? dd?.ToString() ?? "" : "";
+        tipo_titulacion = registro_calificadoActual.TryGetValue("tipo_titulacion", out var tt) ? tt?.ToString() ?? "" : "";
+        fkprograma = registro_calificadoActual.TryGetValue("fkprograma", out var p) ? p?.ToString() ?? "" : "";
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarRegistro");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaCodigo = "";
+        consultaCant_creditos = "";
+        consultaHora_acom = "";
+        consultaHora_ind = "";
+        consultaMetodologia = "";
+        consultaFecha_inicio = "";
+        consultaFecha_fin = "";
+        consultaDuracion_anios = "";
+        consultaDuracion_semestres = "";
+        consultaTipo_titulacion = "";
+        consultafkprograma = "";
+        registroEncontrado = false;
+    }
+
+private void AsignarRegistroParaEliminar(Dictionary<string, object> registro_calificado)
+{
+    registro_calificadoActual = registro_calificado;
+    Console.WriteLine($"Universidad seleccionada para eliminar: Codigo: {registro_calificadoActual["Codigo"]}, Cant_creditos: {registro_calificadoActual["cant_creditos"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarRegistro");
+}
+
+
+    private async Task GuardarRegistro()
+    {
+        try
+        {
+            registro_calificadoActual["codigo"] = codigo;
+            registro_calificadoActual["cant_creditos"] = cant_creditos;
+            registro_calificadoActual["hora_acom"] = hora_acom;
+            registro_calificadoActual["hora_ind"] = hora_ind;
+            registro_calificadoActual["metodologia"] = metodologia;
+            registro_calificadoActual["fecha_inicio"] = fecha_inicio;
+            registro_calificadoActual["fecha_fin"] = fecha_fin;
+            registro_calificadoActual["duracion_anios"] = duracion_anios;
+            registro_calificadoActual["duracion_semestres"] = duracion_semestres;
+            registro_calificadoActual["tipo_titulacion"] = tipo_titulacion;
+            registro_calificadoActual["fkprograma"] = fkprograma;
+           
+            bool exito;
+            if (esNuevoRegistro)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/registro_calificado", registro_calificadoActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/registro_calificado/codigo", codigo, registro_calificadoActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarRegistro");
+
+                await CargarRegistros();
+
+                codigo = cant_creditos = hora_acom = hora_ind = metodologia = fecha_inicio = fecha_fin = duracion_anios = duracion_semestres = tipo_titulacion = fkprograma = string.Empty;
+                registro_calificadoActual = new Dictionary<string, object>();
+                esNuevoRegistro = true;
+
+                StateHasChanged();
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el Registro.Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar el Regisro: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el registro. Por favor, intente nuevamente.");
+        }
+    }
+
+private async Task EliminarRegistro()
+{
+    try
+    {
+        if (registro_calificadoActual.TryGetValue("codigo", out var codigoObj) && codigoObj is string codigoStr)
+        {
+            registro_calificadoActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/registro_calificado/codigo",codigoStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarRegistro");
+                await CargarRegistros();
+                await ServicioJS.InvokeVoidAsync("alert", "Registro eliminado con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el Registro. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar el registro: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el registro. Por favor, intente nuevamente.");
+    }
+}
+
+
+    private async Task ConsultarRegistro()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/registro_calificado/codigo/{consultaCodigo}");
+            if (resultado.Any())
+            {
+                var registro_calificadoConsultado = resultado.First();
+                consultaCant_creditos = registro_calificadoConsultado["cant_creditos"]?.ToString() ?? "";
+                consultaHora_acom = registro_calificadoConsultado["hora_acom"]?.ToString() ?? "";
+                consultaHora_ind = registro_calificadoConsultado["hora_ind"]?.ToString() ?? "";
+                consultaMetodologia = registro_calificadoConsultado["metodologia"]?.ToString() ?? "";
+                consultaFecha_inicio = registro_calificadoConsultado["fecha_inicio"]?.ToString() ?? "";
+                consultaFecha_fin = registro_calificadoConsultado["fecha_fin"]?.ToString() ?? "";
+                consultaDuracion_anios = registro_calificadoConsultado["duracion_anios"]?.ToString() ?? "";
+                consultaDuracion_semestres = registro_calificadoConsultado["duracion_semestres"]?.ToString() ?? "";
+                consultaTipo_titulacion = registro_calificadoConsultado["tipo_titulacion"]?.ToString() ?? "";
+                consultafkprograma = registro_calificadoConsultado["fkprograma"]?.ToString() ?? "";
+
+                registroEncontrado = true;
+            }
+            else
+            {
+                consultaCant_creditos = "";
+                consultaHora_acom = "";
+                consultaHora_ind = "";
+                consultaMetodologia = "";
+                consultaFecha_inicio = "";
+                consultaFecha_fin = "";
+                consultaDuracion_anios = "";
+                consultaDuracion_semestres = "";
+                consultaTipo_titulacion = "";
+                consultafkprograma = "";
+
+                registroEncontrado = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ningun registro con ese codigo.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar registro: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar el registro. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarRegistroConsultado()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["codigo"] = consultaCodigo,
+            ["cant_creditos"] = consultaCant_creditos,
+            ["hora_acom"] = consultaHora_acom,
+            ["hora_ind"] = consultaHora_ind,
+            ["metodologia"] = consultaMetodologia,
+            ["fecha_inicio"] = consultaFecha_inicio,
+            ["fecha_fin"] = consultaFecha_fin,
+            ["duracion_anios"] = consultaDuracion_anios,
+            ["duracion_semestres"] = consultaDuracion_semestres,
+            ["tipo_titulacion"] = consultaTipo_titulacion,
+            ["fkprograma"] = consultafkprograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarRegistro");
+    }
+
+    private async Task EliminarRegistroConsultada()
+    {
+        AsignarRegistroParaEliminar(new Dictionary<string, object>
+        {
+            ["codigo"] = consultaCodigo,
+            ["cant_creditos"] = consultaCant_creditos,
+            ["hora_acom"] = consultaHora_acom,
+            ["hora_ind"] = consultaHora_ind,
+            ["metodologia"] = consultaMetodologia,
+            ["fecha_inicio"] = consultaFecha_inicio,
+            ["fecha_fin"] = consultaFecha_fin,
+            ["duracion_anios"] = consultaDuracion_anios,
+            ["duracion_semestres"] = consultaDuracion_semestres,
+            ["tipo_titulacion"] = consultaTipo_titulacion,
+            ["fkprograma"] = consultafkprograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarRegistro");
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

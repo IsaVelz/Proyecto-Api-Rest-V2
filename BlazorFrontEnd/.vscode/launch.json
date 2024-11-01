@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Blazor Debug in Chrome",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5086",
+      "webRoot": "${workspaceFolder}",
+      "browserLaunchLocation": "default",
+      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+      "sourceMaps": true,
+      "trace": true,
+      "breakOnLoad": true,  // Asegura que los puntos de quiebre sean reconocidos antes de cargar
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}

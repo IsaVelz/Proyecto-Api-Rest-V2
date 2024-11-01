@@ -1,0 +1,109 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Manejo Innovación</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Acreditacion">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Acreditación
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="activ_academica">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Activ Academica
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="aliado">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Aliado
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="alianza">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Alianza
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="anprograma">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> An Programa
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="area_conocimiento">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Area Conocimiento
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="aspecto_normativo">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Aspecto Normativo
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="car_innovacion">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Car Innovacion
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="enfoque">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Enfoque
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="enfoque_rc">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Enfoque RC
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="facultad">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Facultad
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="pasantia">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Pasantia
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="practica_estrategia">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Practica Estrategia
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="premio">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Premio
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="registro_calificado">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Registro Calificado
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Universidad">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Universidad
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

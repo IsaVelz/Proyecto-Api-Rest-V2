@@ -1,0 +1,170 @@
+@page "/login" 
+<!--
+Define la ruta "/login" para acceder a este componente. Cuando un usuario navega a "/login", 
+este componente se cargará.
+-->
+
+@using System.Net.Http.Json
+<!--
+Permite usar el método `PostAsJsonAsync` para realizar solicitudes HTTP con datos JSON.
+-->
+
+@inject HttpClient Http
+<!--
+Inyecta el cliente HTTP (`HttpClient`) que se usará para enviar solicitudes a la API.
+-->
+
+@inject NavigationManager Navigation
+<!--
+Inyecta el gestor de navegación (`NavigationManager`) para permitir la redirección a otras páginas.
+-->
+
+@inject IJSRuntime JSRuntime
+<!--
+Inyecta `IJSRuntime`, que permite la ejecución de código JavaScript desde C#.
+-->
+
+<!-- Sección del diseño principal -->
+<section class="vh-100">
+  <div class="container-fluid h-custom">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <!-- Columna para la imagen -->
+      <div class="col-md-9 col-lg-6 col-xl-5">
+        <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
+          class="img-fluid" alt="Sample image">
+      </div>
+      <!-- Columna para el formulario de login -->
+      <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
+        <!-- Componente EditForm que gestiona el envío del formulario -->
+        <EditForm Model="@modeloLogin" OnValidSubmit="ManejarLogin">
+          <!-- Sección para botones de login con redes sociales -->
+          <div class="d-flex flex-row align-items-center justify-content-center justify-content-lg-start">
+            <p class="lead fw-normal mb-0 me-3">Sign in with</p>
+            <button type="button" class="btn btn-primary btn-floating mx-1">
+              <i class="fab fa-facebook-f"></i>
+            </button>
+            <button type="button" class="btn btn-primary btn-floating mx-1">
+              <i class="fab fa-twitter"></i>
+            </button>
+            <button type="button" class="btn btn-primary btn-floating mx-1">
+              <i class="fab fa-linkedin-in"></i>
+            </button>
+          </div>
+
+          <div class="divider d-flex align-items-center my-4">
+            <p class="text-center fw-bold mx-3 mb-0">Or</p>
+          </div>
+
+          <!-- Input de correo electrónico -->
+          <div class="form-outline mb-4">
+            <InputText id="form3Example3" class="form-control form-control-lg" 
+                       @bind-Value="modeloLogin.Correo" placeholder="Enter a valid email address" />
+            <!-- Campo para introducir la dirección de correo -->
+            <label class="form-label" for="form3Example3">Email address</label>
+            <ValidationMessage For="@(() => modeloLogin.Correo)" />
+            <!-- Muestra un mensaje de validación si el correo no es válido -->
+          </div>
+
+          <!-- Input de contraseña -->
+          <div class="form-outline mb-3">
+            <InputText id="form3Example4" type="password" class="form-control form-control-lg" 
+                       @bind-Value="modeloLogin.Contrasena" placeholder="Enter password" />
+            <!-- Campo para introducir la contraseña -->
+            <label class="form-label" for="form3Example4">Password</label>
+            <ValidationMessage For="@(() => modeloLogin.Contrasena)" />
+            <!-- Muestra un mensaje de validación si la contraseña no es válida -->
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <!-- Checkbox para "Recordarme" -->
+            <div class="form-check mb-0">
+              <input class="form-check-input me-2" type="checkbox" value="" id="form2Example3" />
+              <label class="form-check-label" for="form2Example3">
+                Remember me
+              </label>
+            </div>
+            <a href="#!" class="text-body">Forgot password?</a>
+            <!-- Enlace para recuperar contraseña -->
+          </div>
+
+          <!-- Botón para enviar el formulario -->
+          <div class="text-center text-lg-start mt-4 pt-2">
+            <button type="submit" class="btn btn-primary btn-lg" 
+                    style="padding-left: 2.5rem; padding-right: 2.5rem;">Login</button>
+            <p class="small fw-bold mt-2 pt-1 mb-0">Don't have an account? 
+              <a href="#!" class="link-danger">Register</a>
+            </p>
+          </div>
+        </EditForm>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pie de página con iconos de redes sociales -->
+  <div class="d-flex flex-column flex-md-row text-center text-md-start justify-content-between 
+              py-4 px-4 px-xl-5 bg-primary">
+    <!-- Derechos de autor -->
+    <div class="text-white mb-3 mb-md-0">
+      Copyright © 2020. All rights reserved.
+    </div>
+    <!-- Iconos de redes sociales -->
+    <div>
+      <a href="#!" class="text-white me-4">
+        <i class="fab fa-facebook-f"></i>
+      </a>
+      <a href="#!" class="text-white me-4">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a href="#!" class="text-white me-4">
+        <i class="fab fa-google"></i>
+      </a>
+      <a href="#!" class="text-white">
+        <i class="fab fa-linkedin-in"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+@code {
+    // Modelo que contiene los datos del formulario de login
+    private ModeloLogin modeloLogin = new ModeloLogin();
+
+    // Método que maneja el inicio de sesión
+    private async Task ManejarLogin()
+    {
+        // Diccionario que envía los datos al API para autenticación
+        var datosSolicitud = new Dictionary<string, string>
+        {
+            { "userField", "email" },  // Campo de usuario en la API
+            { "passwordField", "contrasena" },  // Campo de contraseña en la API
+            { "userValue", modeloLogin.Correo },  // Valor del email ingresado
+            { "passwordValue", modeloLogin.Contrasena }  // Valor de la contraseña ingresada
+        };
+
+        // Realiza la solicitud POST al API de verificación de usuario
+        var respuesta = await Http.PostAsJsonAsync("api/proyecto/usuario/verificar-contrasena", datosSolicitud);
+
+        // Si la respuesta es exitosa, redirige a la página de inicio
+        if (respuesta.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else if (respuesta.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            // Si las credenciales son incorrectas, muestra un mensaje de error
+            await JSRuntime.InvokeVoidAsync("alert", "Usuario o contraseña incorrecta.");
+        }
+        else
+        {
+            // Si ocurre un error diferente, muestra un mensaje de error genérico
+            await JSRuntime.InvokeVoidAsync("alert", "Error al iniciar sesión. Por favor, intente de nuevo.");
+        }
+    }
+
+    // Clase que representa el modelo de datos del formulario de login
+    public class ModeloLogin
+    {
+        public string Correo { get; set; } = string.Empty;  // Campo para el correo del usuario
+        public string Contrasena { get; set; } = string.Empty;  // Campo para la contraseña del usuario
+    }
+}

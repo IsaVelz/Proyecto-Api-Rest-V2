@@ -1,0 +1,518 @@
+@page "/pasantia"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="
+    table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Pasantias</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarPasantia" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Añadir Nueva Pasantia</span>
+                        </a>
+                        <a href="#modalConsultarPasantia" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar Pasantia</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (pasantias == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!pasantias.Any())
+            {
+                <p>No hay pasantias registradas.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover table-dark">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Pais</th>
+                            <th>Empresa</th>
+                            <th>Descripcion</th>
+                            <th>Programa</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pasantia in pasantias)
+                        {
+                            <tr>
+                                <td>@pasantia["id"]</td>
+                                <td>@pasantia["nombre"]</td>
+                                <td>@pasantia["pais"]</td>
+                                <td>@pasantia["empresa"]</td>
+                                <td>@pasantia["descripcion"]</td>
+                                <td>@pasantia["programa"]</td> 
+                                <td>
+                                    <a href="#modalAgregarPasantia" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(pasantia)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                  <a href="#modalEliminarPasantia" class="delete" data-bs-toggle="modal" @onclick="() => AsignarPasantiaParaEliminar(pasantia)">
+                                        <i class="bi bi-trash3" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarPasantia" tabindex="-1" role="dialog" aria-labelledby="modalAgregarPasantiaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@pasantiaActual" OnValidSubmit="GuardarPasantia">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarPasantiaLabel">@(esNuevaPasantia? "Añadir" : "Editar") Pasantia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Id</label>
+                        <InputText class="form-control" @bind-Value="id" />
+                        <ValidationMessage For="@(() => id)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <InputText class="form-control" @bind-Value="nombre" />
+                        <ValidationMessage For="@(() => nombre)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Pais</label>
+                        <InputText class="form-control" @bind-Value="pais" />
+                        <ValidationMessage For="@(() => pais)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Empresa</label>
+                        <InputText class="form-control" @bind-Value="empresa" />
+                        <ValidationMessage For="@(() => empresa)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Descripcion</label>
+                        <InputText class="form-control" @bind-Value="descripcion" />
+                        <ValidationMessage For="@(() => descripcion)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Id Programa</label>
+                        <InputText class="form-control" @bind-Value="programa" />
+                        <ValidationMessage For="@(() => programa)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevaPasantia ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarPasantia" tabindex="-1" role="dialog" aria-labelledby="modalEliminarPasantiaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarPasantiaLabel">Eliminar Pasantia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea marcar esta pasantia como inactiva?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarPasantia">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsultarPasantia" tabindex="-1" role="dialog" aria-labelledby="modalConsultarPasantiaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarPasantiaLabel">Consultar Pasantia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" class="form-control" @bind="consultaId" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" @bind="consultaNombre" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Pais</label>
+                    <input type="text" class="form-control" @bind="consultaPais" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Empresa</label>
+                    <input type="text" class="form-control" @bind="consultaEmpresa" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Descripcion</label>
+                    <input type="text" class="form-control" @bind="consultaDescripcion" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Programa</label>
+                    <input type="text" class="form-control" @bind="consultaPrograma" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarPasantia">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarPasantiaConsultada" disabled="@(!pasantiaEncontrada)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarPasantiaConsultada" disabled="@(!pasantiaEncontrada)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> pasantias = new List<Dictionary<string, object>>();
+    
+    private Dictionary<string, object> pasantiaActual = new Dictionary<string, object>();
+
+    private bool esNuevaPasantia = true;
+
+    private bool pasantiaEncontrada = false;
+
+    private string id = "";
+
+    private string nombre = "";
+
+    private string pais = "";
+
+    private string empresa = "";
+
+    private string descripcion = "";
+
+    private string programa = "";
+
+
+    private string consultaId = "";
+
+    private string consultaNombre = "";
+
+    private string consultaPais = "";
+
+    private string consultaEmpresa = "";
+
+    private string consultaDescripcion = "";
+
+    private string consultaPrograma = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPasantias();
+    }
+
+    private async Task CargarPasantias()
+    {
+        try
+        {
+            pasantias = await ServicioApi.GetDataAsync("api/proyecto/pasantia");
+            pasantias = pasantias.Where(u => (bool)(u["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar los Pasantias: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al cargar los Pasantias. Por favor, intente nuevamente.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? pasantia = null)
+    {
+        esNuevaPasantia = pasantia == null;
+        pasantiaActual = pasantia ?? new Dictionary<string, object>();
+
+        id = pasantiaActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = pasantiaActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        pais = pasantiaActual.TryGetValue("pais", out var e) ? e?.ToString() ?? "" : "";
+        empresa = pasantiaActual.TryGetValue("empresa", out var t) ? t?.ToString() ?? "" : "";
+        descripcion = pasantiaActual.TryGetValue("descripcion", out var m) ? m?.ToString() ?? "" : "";
+        programa = pasantiaActual.TryGetValue("programa", out var f) ? f?.ToString() ?? "" : "";
+        if(esNuevaPasantia) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPasantia");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarPasantia");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? pasantia = null)
+    {
+        esNuevaPasantia = pasantia == null;
+        pasantiaActual = pasantia ?? new Dictionary<string, object>();
+
+        id = pasantiaActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = pasantiaActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        pais = pasantiaActual.TryGetValue("pais", out var e) ? e?.ToString() ?? "" : "";
+        empresa = pasantiaActual.TryGetValue("empresa", out var t) ? t?.ToString() ?? "" : "";
+        descripcion = pasantiaActual.TryGetValue("descripcion", out var m) ? m?.ToString() ?? "" : "";
+        programa = pasantiaActual.TryGetValue("programa", out var f) ? f?.ToString() ?? "" : "";
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPasantia");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaId = "";
+        consultaNombre = "";
+        consultaPais = "";
+        consultaEmpresa = "";
+        consultaDescripcion = "";
+        consultaPrograma = "";
+        pasantiaEncontrada = false;
+    }
+
+private void AsignarPasantiaParaEliminar(Dictionary<string, object> pasantia)
+{
+    pasantiaActual = pasantia;
+    Console.WriteLine($"Pasantia seleccionado para eliminar: Id: {pasantiaActual["id"]}, Nombre: {pasantiaActual["nombre"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarPasantia");
+}
+
+
+    private async Task GuardarPasantia()
+    {
+        try
+        {
+            pasantiaActual["id"] = id;
+            pasantiaActual["nombre"] = nombre;
+            pasantiaActual["pais"] = pais;
+            pasantiaActual["empresa"] = empresa;
+            pasantiaActual["descripcion"] = descripcion;
+            pasantiaActual["programa"] = programa;
+           
+            bool exito;
+            if (esNuevaPasantia)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/pasantia", pasantiaActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/pasantia/id", id, pasantiaActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPasantia");
+
+                await CargarPasantias();
+
+                id = nombre = pais = empresa = descripcion = programa = string.Empty;
+                pasantiaActual = new Dictionary<string, object>();
+                esNuevaPasantia = true;
+
+                StateHasChanged();
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la Pasantia.Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar la Pasantia: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la Pasantia. Por favor, intente nuevamente.");
+        }
+    }
+
+private async Task EliminarPasantia()
+{
+    try
+    {
+        if (pasantiaActual.TryGetValue("id", out var idObj) && idObj is string idStr)
+        {
+            pasantiaActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/pasantia/id",idStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarPasantia");
+                await CargarPasantias();
+                await ServicioJS.InvokeVoidAsync("alert", "Pasantia eliminada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la Pasantia. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar la pasantia: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la pasantia. Por favor, intente nuevamente.");
+    }
+}
+
+
+    private async Task ConsultarPasantia()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/pasantia/id/{consultaId}");
+            if (resultado.Any())
+            {
+                var pasantiaConsultada = resultado.First();
+                consultaNombre = pasantiaConsultada["nombre"]?.ToString() ?? "";
+                consultaPais = pasantiaConsultada["pais"]?.ToString() ?? "";
+                consultaEmpresa = pasantiaConsultada["empresa"]?.ToString() ?? "";
+                consultaDescripcion = pasantiaConsultada["descripcion"]?.ToString() ?? "";
+                consultaPrograma = pasantiaConsultada["programa"]?.ToString() ?? "";
+                pasantiaEncontrada = true;
+            }
+            else
+            {
+                consultaNombre = "";
+                consultaPais = "";
+                consultaEmpresa = "";
+                consultaDescripcion = "";
+                consultaPrograma = "";
+                pasantiaEncontrada = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ninguna pasantia con ese id.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar la pasantia: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar la pasantia. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarPasantiaConsultada()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["nombre"] = consultaNombre,
+            ["pais"] = consultaPais,
+            ["empresa"] = consultaEmpresa,
+            ["descripcion"] = consultaDescripcion,
+            ["programa"] = consultaPrograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarPasantia");
+    }
+
+    private async Task EliminarPasantiaConsultada()
+    {
+        AsignarPasantiaParaEliminar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["nombre"] = consultaNombre,
+            ["pais"] = consultaPais,
+            ["empresa"] = consultaEmpresa,
+            ["descripcion"] = consultaDescripcion,
+            ["programa"] = consultaPrograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarPasantia");
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

@@ -1,0 +1,494 @@
+@page "/facultad"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Facultades</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarFacultad" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Añadir Nueva Facultad</span>
+                        </a>
+                        <a href="#modalConsultarFacultad" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar Facultad</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (facultades == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!facultades.Any())
+            {
+                <p>No hay Facultades registradas.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Fecha De Fundada</th>
+                            <th>Id Universidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var facultad in facultades)
+                        {
+                            <tr>
+                                <td>@facultad["id"]</td>
+                                <td>@facultad["nombre"]</td>
+                                <td>@facultad["tipo"]</td>
+                                <td>@facultad["fecha_fun"]</td>
+                                <td>@facultad["universidad"]</td>
+                                <td>
+                                    <a href="#modalAgregarFacultad" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(facultad)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                  <a href="#modalEliminarFacultad" class="delete" data-bs-toggle="modal" @onclick="() => AsignarFacultadParaEliminar(facultad)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarFacultad" tabindex="-1" role="dialog" aria-labelledby="modalAgregarFacultadLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@facultadActual" OnValidSubmit="GuardarFacultad">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarFacultadLabel">@(esNuevaFacultad? "Añadir" : "Editar") Facultad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Id</label>
+                        <InputText class="form-control" @bind-Value="id" />
+                        <ValidationMessage For="@(() => id)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <InputText class="form-control" @bind-Value="nombre" />
+                        <ValidationMessage For="@(() => nombre)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <InputText class="form-control" @bind-Value="tipo" />
+                        <ValidationMessage For="@(() => tipo)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha Fundada</label>
+                        <InputText class="form-control" @bind-Value="fecha_fun" />
+                        <ValidationMessage For="@(() => fecha_fun)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Id Universidad</label>
+                        <InputText class="form-control" @bind-Value="universidad" />
+                        <ValidationMessage For="@(() => universidad)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevaFacultad ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarFacultad" tabindex="-1" role="dialog" aria-labelledby="modalEliminarFacultadLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarFacultadLabel">Eliminar Facultad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea marcar esta facultad como inactiva?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarFacultad">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsultarFacultad" tabindex="-1" role="dialog" aria-labelledby="modalConsultarFacultadLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarFacultadLabel">Consultar Facultad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" class="form-control" @bind="consultaId" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" @bind="consultaNombre" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <input type="text" class="form-control" @bind="consultaTipo" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Fecha De Fundada</label>
+                    <input type="text" class="form-control" @bind="consultaFecha_fun" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Id Universidad</label>
+                    <input type="text" class="form-control" @bind="consultauniversidad" readonly />
+                </div>
+                
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarFacultad">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarFacultadConsultada" disabled="@(!facultadEncontrada)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarFacultadConsultada" disabled="@(!facultadEncontrada)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> facultades = new List<Dictionary<string, object>>();
+    
+    private Dictionary<string, object> facultadActual = new Dictionary<string, object>();
+
+    private bool esNuevaFacultad = true;
+
+    private bool facultadEncontrada = false;
+
+    private string id = "";
+
+    private string nombre = "";
+
+    private string tipo = "";
+
+    private string fecha_fun = "";
+
+    private string universidad = "";
+
+    private string consultaId = "";
+
+    private string consultaNombre = "";
+
+    private string consultaTipo = "";
+
+    private string consultaFecha_fun = "";
+
+    private string consultauniversidad = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarFacultades();
+    }
+
+    private async Task CargarFacultades()
+    {
+        try
+        {
+            facultades = await ServicioApi.GetDataAsync("api/proyecto/facultad");
+            //facultades = facultades.Where(a => !(bool)(a["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar las facultades: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al cargar las facultades. Por favor, intente nuevamente.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? facultad = null)
+    {
+        esNuevaFacultad = facultad == null;
+        facultadActual = facultad ?? new Dictionary<string, object>();
+
+        id = facultadActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = facultadActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        tipo = facultadActual.TryGetValue("tipo", out var e) ? e?.ToString() ?? "" : "";
+        fecha_fun = facultadActual.TryGetValue("fecha_fun", out var t) ? t?.ToString() ?? "" : "";
+        universidad = facultadActual.TryGetValue("universidad", out var m) ? m?.ToString() ?? "" : "";
+        if(esNuevaFacultad) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarFacultad");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarFacultad");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? facultad = null)
+    {
+        esNuevaFacultad = facultad == null;
+        facultadActual =facultad ?? new Dictionary<string, object>();
+
+        id = facultadActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        nombre = facultadActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        tipo = facultadActual.TryGetValue("tipo", out var e) ? e?.ToString() ?? "" : "";
+        fecha_fun = facultadActual.TryGetValue("fecha_fun", out var t) ? t?.ToString() ?? "" : "";
+        universidad = facultadActual.TryGetValue("universidad", out var m) ? m?.ToString() ?? "" : "";
+
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarFacultad");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaId = "";
+        consultaNombre = "";
+        consultaTipo = "";
+        consultaFecha_fun = "";
+        consultauniversidad = "";
+        facultadEncontrada = false;
+    }
+
+private void AsignarFacultadParaEliminar(Dictionary<string, object> facultad)
+{
+    facultadActual = facultad;
+    Console.WriteLine($"Facultad seleccionado para eliminar: Id: {facultadActual["id"]}, Nombre: {facultadActual["nombre"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarFacultad");
+}
+
+
+    private async Task GuardarFacultad()
+    {
+        try
+        {
+            facultadActual["id"] = id;
+            facultadActual["nombre"] = nombre;
+            facultadActual["tipo"] = tipo;
+            facultadActual["fecha_fun"] = fecha_fun;
+            facultadActual["universidad"] = universidad;
+           
+            bool exito;
+            if (esNuevaFacultad)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/facultad", facultadActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/facultad/id", id, facultadActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarFacultad");
+
+                await CargarFacultades();
+
+                id = nombre = tipo = fecha_fun = universidad = string.Empty;
+                facultadActual = new Dictionary<string, object>();
+                esNuevaFacultad = true;
+
+                StateHasChanged();
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el Facultad.Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar la Facultad: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la facultad. Por favor, intente nuevamente.");
+        }
+    }
+
+private async Task EliminarFacultad()
+{
+    try
+    {
+        if (facultadActual.TryGetValue("id", out var idObj) && idObj is string idStr)
+        {
+            facultadActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/facultad/id",idStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarFacultad");
+                await CargarFacultades();
+                await ServicioJS.InvokeVoidAsync("alert", "Facultad eliminada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la Facultad. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar la facultad: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la facultad. Por favor, intente nuevamente.");
+    }
+}
+
+
+    private async Task ConsultarFacultad()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/facultad/id/{consultaId}");
+            if (resultado.Any())
+            {
+                var facultadConsultada = resultado.First();
+                consultaNombre = facultadConsultada["nombre"]?.ToString() ?? "";
+                consultaTipo = facultadConsultada["tipo"]?.ToString() ?? "";
+                consultaFecha_fun = facultadConsultada["fecha_fun"]?.ToString() ?? "";
+                consultauniversidad = facultadConsultada["universidad"]?.ToString() ?? "";
+
+                facultadEncontrada = true;
+            }
+            else
+            {
+                consultaNombre = "";
+                consultaTipo = "";
+                consultaFecha_fun = "";
+                consultauniversidad = "";
+                facultadEncontrada = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ninguna facultad con ese id.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar la facultad: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar la facultad. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarFacultadConsultada()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["nombre"] = consultaNombre,
+            ["tipo"] = consultaTipo,
+            ["fecha_fun"] = consultaFecha_fun,
+            ["universidad"] = consultauniversidad
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarFacultad");
+    }
+
+    private async Task EliminarFacultadConsultada()
+    {
+        AsignarFacultadParaEliminar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["nombre"] = consultaNombre,
+            ["tipo"] = consultaTipo,
+            ["fecha_fun"] = consultaFecha_fun,
+            ["universidad"] = consultauniversidad
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarFacultad");
+    }
+}
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

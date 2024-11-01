@@ -1,0 +1,427 @@
+
+@page "/enfoque_rc"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Enfoque RC</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarEnfoque_rc" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Añadir Nuevo Enfoque RC</span>
+                        </a>
+                        <a href="#modalConsultarEnfoque_rc" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar Enfoque RC</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (enfoque_rcs == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!enfoque_rcs.Any())
+            {
+                <p>No hay enfoques rc registrados.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover table-dark">
+                    <thead>
+                        <tr>
+                            <th>Enfoque</th>
+                            <th>Registro Calificado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var enfoque_rc in enfoque_rcs)
+                        {
+                            <tr>
+                                <td>@enfoque_rc["enfoque"]</td>
+                                <td>@enfoque_rc["registro_calificado"]</td>
+                                <td>
+                                    <a href="#modalAgregarEnfoque_rc" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(enfoque_rc)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                  <a href="#modalEliminarEnfoque_rc" class="delete" data-bs-toggle="modal" @onclick="() => AsignarEnfoque_rcParaEliminar(enfoque_rc)">
+                                        <i class="material_icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarEnfoque_rc" tabindex="-1" role="dialog" aria-labelledby="modalAgregarEnfoque_rcLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@enfoque_rcActual" OnValidSubmit="GuardarEnfoque_rc">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarEnfoque_rcLabel">@(esNuevoEnfoque_rc? "Añadir" : "Editar") Enfoque RC</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Enfoque</label>
+                        <InputText class="form-control" @bind-Value="enfoque" />
+                        <ValidationMessage For="@(() => enfoque)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Registro Calificado</label>
+                        <InputText class="form-control" @bind-Value="registro_calificado" />
+                        <ValidationMessage For="@(() => registro_calificado)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevoEnfoque_rc ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarEnfoque_rc" tabindex="-1" role="dialog" aria-labelledby="modalEliminarEnfoque_rcLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarEnfoque_rcLabel">Eliminar Enfoque RC</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea marcar este Enfoque RC como inactivo?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarEnfoque_rc">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsultarEnfoque_rc" tabindex="-1" role="dialog" aria-labelledby="modalConsultarEnfoque_rcLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarEnfoque_rcLabel">Consultar Enfoque RC</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Enfoque</label>
+                    <input type="text" class="form-control" @bind="consultaEnfoque" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Registro Calificado</label>
+                    <input type="text" class="form-control" @bind="consultaRegistro_calificado" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarEnfoque_rc">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarEnfoque_rcConsultado" disabled="@(!enfoque_rcEncontrado)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarEnfoque_rcConsultado" disabled="@(!enfoque_rcEncontrado)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> enfoque_rcs = new List<Dictionary<string, object>>();
+    
+    private Dictionary<string, object> enfoque_rcActual = new Dictionary<string, object>();
+
+    private bool esNuevoEnfoque_rc = true;
+
+    private bool enfoque_rcEncontrado = false;
+
+    private string enfoque = "";
+
+    private string registro_calificado = "";
+
+    private string consultaEnfoque = "";
+
+    private string consultaRegistro_calificado = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarEnfoque_rcs();
+    }
+
+    private async Task CargarEnfoque_rcs()
+    {
+        try
+        {
+            enfoque_rcs = await ServicioApi.GetDataAsync("api/proyecto/enfoque_rc");
+            enfoque_rcs = enfoque_rcs.Where(u => (bool)(u["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar los Enfoques RC: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al cargar los Enfoques RC. Por favor, intente nuevamente.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? enfoque_rc = null)
+    {
+        esNuevoEnfoque_rc = enfoque_rc == null;
+        enfoque_rcActual = enfoque_rc ?? new Dictionary<string, object>();
+
+        enfoque = enfoque_rcActual.TryGetValue("enfoque", out var e) ? e?.ToString() ?? "" : "";
+        registro_calificado = enfoque_rcActual.TryGetValue("registro_calificado", out var n) ? n?.ToString() ?? "" : "";
+        
+        if(esNuevoEnfoque_rc) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarEnfoque_rc");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarEnfoque_rc");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? enfoque_rc = null)
+    {
+        esNuevoEnfoque_rc = enfoque_rc == null;
+        enfoque_rcActual = enfoque_rc ?? new Dictionary<string, object>();
+
+        enfoque = enfoque_rcActual.TryGetValue("enfoque", out var c) ? c?.ToString() ?? "" : "";
+        registro_calificado = enfoque_rcActual.TryGetValue("registro_calificado", out var n) ? n?.ToString() ?? "" : "";
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarEnfoque_rc");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaEnfoque = "";
+        consultaRegistro_calificado = "";
+        enfoque_rcEncontrado = false;
+    }
+
+private void AsignarEnfoque_rcParaEliminar(Dictionary<string, object> enfoque_rc)
+{
+    enfoque_rcActual = enfoque_rc;
+    Console.WriteLine($"Enfoque RC seleccionado para eliminar: Enfoque: {enfoque_rcActual["enfoque_rc"]}, Registro: {enfoque_rcActual["registro_calificado"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarEnfoque_rc");
+}
+
+
+    private async Task GuardarEnfoque_rc()
+    {
+        try
+        {
+            enfoque_rcActual["enfoque"] = enfoque;
+            enfoque_rcActual["registro_calificado"] = registro_calificado;
+           
+            bool exito;
+            if (esNuevoEnfoque_rc)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/enfoque_rc", enfoque_rcActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/enfoque_rc/enfoque", enfoque, enfoque_rcActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarEnfoque_rc");
+
+                await CargarEnfoque_rcs();
+
+                enfoque = registro_calificado = string.Empty;
+                enfoque_rcActual = new Dictionary<string, object>();
+                esNuevoEnfoque_rc = true;
+
+                StateHasChanged();
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el Enfoque RC.Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar el Enfoque RC: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el Enfoque RC. Por favor, intente nuevamente.");
+        }
+    }
+
+private async Task EliminarEnfoque_rc()
+{
+    try
+    {
+        if (enfoque_rcActual.TryGetValue("enfoque", out var enfoqueObj) && enfoqueObj is string enfoqueStr)
+        {
+            enfoque_rcActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/enfoque_rc/enfoque",enfoqueStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarEnfoque_rc");
+                await CargarEnfoque_rcs();
+                await ServicioJS.InvokeVoidAsync("alert", "Enfoque RC eliminado con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el Enfoque RC. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar el Enfoque RC: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el Enfoque RC. Por favor, intente nuevamente.");
+    }
+}
+
+
+    private async Task ConsultarEnfoque_rc()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/enfoque_rc/enfoque/{consultaEnfoque}");
+            if (resultado.Any())
+            {
+                var programaConsultado = resultado.First();
+                consultaEnfoque = programaConsultado["enfoque"]?.ToString() ?? "";
+                consultaRegistro_calificado = programaConsultado["registro_calificado"]?.ToString() ?? "";
+                enfoque_rcEncontrado = true;
+            }
+            else
+            {
+                consultaEnfoque = "";
+                consultaRegistro_calificado = "";
+                enfoque_rcEncontrado = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ningun Enfoque RC con ese Enfoque.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar Enfoque RC: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar el Enfoque RC. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarEnfoque_rcConsultado()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["enfoque"] = consultaEnfoque,
+            ["registro_calificado"] = consultaRegistro_calificado,
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarEnfoque_rc");
+    }
+
+    private async Task EliminarEnfoque_rcConsultado()
+    {
+        AsignarEnfoque_rcParaEliminar(new Dictionary<string, object>
+        {
+            ["enfoque"] = consultaEnfoque,
+            ["registro_calificado"] = consultaRegistro_calificado,
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarEnfoque_rc");
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

@@ -1,0 +1,630 @@
+@page "/aliado"
+@using BlazorFrontEnd.Services
+@using System.Text.Json
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Aliados</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarAliado" class="btn btn-success" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Nuevo</span>
+                        </a>
+                        <a href="#modalConsultarAliado" class="btn btn-success" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (aliados == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!aliados.Any())
+            {
+                <p>No hay aliados registrados.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>NIT</th>
+                            <th>Razón Social</th>
+                            <th>Nombre Contacto</th>
+                            <th>Correo</th>
+                            <th>Teléfono</th>
+                            <th>Ciudad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var aliado in aliados)
+                        {
+                            <tr>
+                                <td>@aliado["nit"]</td>
+                                <td>@aliado["razon_social"]</td>
+                                <td>@aliado["nombre_contacto"]</td>
+                                <td>@aliado["correo"]</td>
+                                <td>@aliado["telefono"]</td>
+                                <td>@aliado["ciudad"]</td>
+                                <td>
+                                    <a href="#modalAgregarAliado" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(aliado)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                    <a href="#modalEliminarAliado" class="delete" data-bs-toggle="modal" @onclick="() => AsignarAliadoParaEliminar(aliado)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Añadir/Editar Aliado -->
+<div class="modal fade" id="modalAgregarAliado" tabindex="-1" role="dialog" aria-labelledby="modalAgregarAliadoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@aliadoActual" OnValidSubmit="GuardarAliado">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarAliadoLabel">@(esNuevoAliado ? "Añadir" : "Editar") Aliado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                    <label>NIT</label>
+                    <InputText class="form-control" @bind-Value="nit" readonly="@(esNuevoAliado ? false : true)" />
+                    <ValidationMessage For="@(() => nit)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Razón Social</label>
+                        <InputText class="form-control" @bind-Value="razonSocial" />
+                        <ValidationMessage For="@(() => razonSocial)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre Contacto</label>
+                        <InputText class="form-control" @bind-Value="nombreContacto" />
+                        <ValidationMessage For="@(() => nombreContacto)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Correo</label>
+                        <InputText class="form-control" @bind-Value="correo" />
+                        <ValidationMessage For="@(() => correo)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <InputText class="form-control" @bind-Value="telefono" />
+                        <ValidationMessage For="@(() => telefono)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Ciudad</label>
+                        <InputText class="form-control" @bind-Value="ciudad" />
+                        <ValidationMessage For="@(() => ciudad)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevoAliado ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar Aliado -->
+<div class="modal fade" id="modalEliminarAliado" tabindex="-1" role="dialog" aria-labelledby="modalEliminarAliadoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarAliadoLabel">Eliminar Aliado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar este aliado?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CancelarEliminacion">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarAliado">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Consultar Aliado -->
+<div class="modal fade" id="modalConsultarAliado" tabindex="-1" role="dialog" aria-labelledby="modalConsultarAliadoLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarAliadoLabel">Consultar Aliado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>NIT</label>
+                    <input type="text" class="form-control" @bind="consultaNit" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Razón Social</label>
+                    <input type="text" class="form-control" @bind="consultaRazonSocial" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Nombre Contacto</label>
+                    <input type="text" class="form-control" @bind="consultaNombreContacto" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Correo</label>
+                    <input type="text" class="form-control" @bind="consultaCorreo" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" class="form-control" @bind="consultaTelefono" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" class="form-control" @bind="consultaCiudad" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarAliado">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarAliadoConsultado" disabled="@(!aliadoEncontrado)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarAliadoConsultado" disabled="@(!aliadoEncontrado)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> aliados = new List<Dictionary<string, object>>();
+    // Lista que almacena los aliados obtenidos desde la API
+    
+    private Dictionary<string, object> aliadoActual = new Dictionary<string, object>();
+    // Diccionario que representa el aliado actual que se está añadiendo o editando
+
+    private bool esNuevoAliado = true;
+    // Bandera que indica si se está añadiendo un nuevo aliado o editando uno existente
+
+    private bool aliadoEncontrado = false;
+    // Bandera que indica si un aliado fue encontrado durante la consulta
+
+    private string nit = "";
+    // Variable que almacena el NIT del aliado durante la edición o creación
+
+    private string razonSocial = "";
+    // Variable que almacena la razón social del aliado durante la edición o creación
+
+    private string nombreContacto = "";
+    // Variable que almacena el nombre de contacto del aliado durante la edición o creación
+
+    private string correo = "";
+    // Variable que almacena el correo del aliado durante la edición o creación
+
+    private string telefono = "";
+    // Variable que almacena el teléfono del aliado durante la edición o creación
+
+    private string ciudad = "";
+    // Variable que almacena la ciudad del aliado durante la edición o creación
+
+    private string consultaNit = "";
+    // Variable que almacena el NIT del aliado que se va a consultar
+
+    private string consultaRazonSocial = "";
+    // Variable que almacena la razón social del aliado que se encontró durante la consulta
+
+    private string consultaNombreContacto = "";
+    // Variable que almacena el nombre de contacto del aliado que se encontró durante la consulta
+
+    private string consultaCorreo = "";
+    // Variable que almacena el correo del aliado que se encontró durante la consulta
+
+    private string consultaTelefono = "";
+    // Variable que almacena el teléfono del aliado que se encontró durante la consulta
+
+    private string consultaCiudad = "";
+    // Variable que almacena la ciudad del aliado que se encontró durante la consulta
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAliados();
+        // Método que se ejecuta al inicializar el componente. Carga la lista de aliados desde la API.
+    }
+
+    private async Task CargarAliados()
+    {
+        try
+        {
+            aliados = await ServicioApi.GetDataAsync("api/proyecto/aliado");
+            aliados = aliados.Where(a => !(bool)(a["IsDeleted"] ?? false)).ToList(); // Filtra solo los activos
+
+            // Llama a la API para obtener la lista de aliados y la almacena en la variable 'aliados'.
+            StateHasChanged(); // Fuerza la actualización de la UI después de cargar los datos.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar aliados: {ex.Message}");
+            // Opcional: Log error en vez de mostrar alerta
+            // await ServicioJS.InvokeVoidAsync("console.log", "Error al cargar aliados."); 
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? aliado = null)
+    {
+        esNuevoAliado = aliado == null;
+        // Si 'aliado' es null, significa que estamos añadiendo un nuevo aliado. De lo contrario, estamos editando.
+        aliadoActual = aliado ?? new Dictionary<string, object>();
+        // Si 'aliado' es null, inicializamos un nuevo diccionario. De lo contrario, usamos el diccionario del aliado seleccionado.
+
+        nit = aliadoActual.TryGetValue("nit", out var c) ? c?.ToString() ?? "" : "";
+        razonSocial = aliadoActual.TryGetValue("razon_social", out var r) ? r?.ToString() ?? "" : "";
+        nombreContacto = aliadoActual.TryGetValue("nombre_contacto", out var n) ? n?.ToString() ?? "" : "";
+        correo = aliadoActual.TryGetValue("correo", out var e) ? e?.ToString() ?? "" : "";
+        telefono = aliadoActual.TryGetValue("telefono", out var t) ? t?.ToString() ?? "" : "";
+        ciudad = aliadoActual.TryGetValue("ciudad", out var ci) ? ci?.ToString() ?? "" : "";
+        // Extrae los valores de 'nit', 'razon_social', 'nombre_contacto', 'correo', 'telefono' y 'ciudad' de 'aliadoActual' y los asigna a las variables correspondientes.
+        if(esNuevoAliado) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAliado");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarAliado");
+        }
+        // Muestra el modal para añadir o editar aliado usando JavaScript.
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object> aliado)
+    {
+        esNuevoAliado = false;
+        // Estamos editando un aliado existente.
+        aliadoActual = aliado;
+        // Usamos el diccionario del aliado seleccionado.
+
+        nit = aliadoActual.TryGetValue("nit", out var c) ? c?.ToString() ?? "" : "";
+        razonSocial = aliadoActual.TryGetValue("razon_social", out var r) ? r?.ToString() ?? "" : "";
+        nombreContacto = aliadoActual.TryGetValue("nombre_contacto", out var n) ? n?.ToString() ?? "" : "";
+        correo = aliadoActual.TryGetValue("correo", out var e) ? e?.ToString() ?? "" : "";
+        telefono = aliadoActual.TryGetValue("telefono", out var t) ? t?.ToString() ?? "" : "";
+        ciudad = aliadoActual.TryGetValue("ciudad", out var ci) ? ci?.ToString() ?? "" : "";
+        // Extrae los valores de 'nit', 'razon_social', 'nombre_contacto', 'correo', 'telefono' y 'ciudad' de 'aliadoActual' y los asigna a las variables correspondientes.
+
+        ServicioJS.InvokeVoidAsync("showModal", "modalAgregarAliado");
+        // Muestra el modal para editar aliado usando JavaScript.
+    }
+
+    private async Task CancelarEliminacion()
+    {
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAliado");
+        await Task.Delay(300); // Añade un pequeño retraso para asegurarte que el modal se oculta completamente antes de remover el backdrop
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+        // Cancela el proceso de eliminación ocultando el modal de confirmación y removiendo el fondo.
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaNit = "";
+        consultaRazonSocial = "";
+        consultaNombreContacto = "";
+        consultaCorreo = "";
+        consultaTelefono = "";
+        consultaCiudad = "";
+        aliadoEncontrado = false;
+        // Limpia los campos de consulta y establece 'aliadoEncontrado' en false.
+    }
+
+    private async Task GuardarAliado()
+    {
+        try
+        {
+            aliadoActual["nit"] = nit;
+            aliadoActual["razon_social"] = razonSocial;
+            aliadoActual["nombre_contacto"] = nombreContacto;
+            aliadoActual["correo"] = correo;
+            aliadoActual["telefono"] = telefono;
+            aliadoActual["ciudad"] = ciudad;
+            // Actualiza 'aliadoActual' con los valores actuales de los campos de entrada.
+
+            bool exito;
+            if (esNuevoAliado)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/aliado", aliadoActual);
+                // Si estamos añadiendo un nuevo aliado, llama a la API para añadir el nuevo aliado.
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/aliado/nit", nit, aliadoActual);
+                // Si estamos editando un aliado existente, llama a la API para editarlo.
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAliado");
+                // Si la operación tiene éxito, cierra el modal.
+                await Task.Delay(300); // Añade un pequeño retraso para asegurarte de que el modal se oculta completamente
+                await ServicioJS.InvokeVoidAsync("removeBackdrop");
+                await CargarAliados();
+                // Recarga la lista de aliados para reflejar los cambios.
+
+                nit = razonSocial = nombreContacto = correo = telefono = ciudad = string.Empty;
+                aliadoActual = new Dictionary<string, object>();
+                esNuevoAliado = true;
+                // Limpia los campos del formulario y restablece el estado.
+
+                StateHasChanged();
+                // Fuerza la actualización de la UI.
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+                // Muestra un mensaje de éxito al usuario.
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el aliado. Por favor, intente nuevamente.");
+                // Si la operación falla, muestra un mensaje de error.
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar aliado: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el aliado. Por favor, intente nuevamente.");
+            // Muestra un error en la consola y una alerta si hay una excepción durante el guardado.
+        }
+    }
+
+    private async Task EliminarAliado()
+    {
+        <!-- try
+        {
+            if (aliadoActual.TryGetValue("nit", out var nitObj) && nitObj is string nitStr)
+            {
+                aliadoActual["IsDeleted"] = true; // Cambia el estado a eliminado
+                bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/aliado/nit", nitStr);
+                if (exito)
+                {
+                    await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAliado");
+                    await CargarAliados();
+                    await ServicioJS.InvokeVoidAsync("alert", "Aliado eliminado con éxito.");
+                }
+                else
+                {
+                    await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el aliado. Por favor, intente nuevamente.");
+                }
+            }
+        } -->
+
+        try
+{
+    if (aliadoActual.TryGetValue("nit", out var nitObj) && nitObj is JsonElement jsonElement)
+    {
+        string nitStr;
+
+        // Verificar si el elemento es una cadena
+        if (jsonElement.ValueKind == JsonValueKind.String)
+        {
+            nitStr = jsonElement.GetString()!;
+        }
+        // Verificar si el elemento es un número
+        else if (jsonElement.ValueKind == JsonValueKind.Number)
+        {
+            nitStr = jsonElement.GetInt32().ToString(); // o GetDouble() si puede ser un decimal
+        }
+        else
+        {
+            Console.WriteLine($"Error: el NIT no es una cadena ni un número. ValueKind: {jsonElement.ValueKind}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error: el NIT no es válido o no se encontró.");
+            return; // Salir si no es válido
+        }
+
+        aliadoActual["IsDeleted"] = true; // Cambia el estado a eliminado
+        bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/aliado/nit", nitStr!);    //Endpoint API      
+        
+        if (exito)
+        {
+            await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAliado");
+            await Task.Delay(300); // Añade un pequeño retraso para asegurarte de que el modal se oculta completamente
+            await ServicioJS.InvokeVoidAsync("removeBackdrop");
+            await CargarAliados();
+            await ServicioJS.InvokeVoidAsync("alert", "Aliado eliminado con éxito.");
+        }
+        else
+        {
+            await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el aliado. Por favor, intente nuevamente.");
+        }
+    }
+    else
+    {
+        // Imprimir información para depurar
+        Console.WriteLine($"Error al obtener NIT:");
+        Console.WriteLine($"  Valor de nitObj: {nitObj}");
+        Console.WriteLine($"  Tipo de nitObj: {nitObj?.GetType()}");
+        
+        // Si nitObj es un JsonElement, imprime su ValueKind
+        if (nitObj is JsonElement jsonElementDebug)
+        {
+            Console.WriteLine($"  ValueKind de nitObj: {jsonElementDebug.ValueKind}");
+        }
+
+        await ServicioJS.InvokeVoidAsync("alert", "Error: el NIT no es válido o no se encontró.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error al eliminar aliado: {ex.Message}");
+    await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el aliado. Por favor, intente nuevamente.");
+}
+    }
+
+    private async Task ConsultarAliado()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/aliado/nit/{consultaNit}");
+            if (resultado.Any())
+            {
+                var aliadoConsultado = resultado.First();
+                consultaRazonSocial = aliadoConsultado["razon_social"]?.ToString() ?? "";
+                consultaNombreContacto = aliadoConsultado["nombre_contacto"]?.ToString() ?? "";
+                consultaCorreo = aliadoConsultado["correo"]?.ToString() ?? "";
+                consultaTelefono = aliadoConsultado["telefono"]?.ToString() ?? "";
+                consultaCiudad = aliadoConsultado["ciudad"]?.ToString() ?? "";
+                aliadoEncontrado = true;
+                // Si se encuentra un aliado con el NIT consultado, muestra los datos en los campos correspondientes.
+            }
+            else
+            {
+                consultaRazonSocial = consultaNombreContacto = consultaCorreo = consultaTelefono = consultaCiudad = "";
+                aliadoEncontrado = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ningún aliado con ese NIT.");
+                // Si no se encuentra ningún aliado, limpia los campos y muestra un mensaje de alerta.
+            }
+            StateHasChanged();
+            // Fuerza la actualización de la UI para reflejar los cambios.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar aliado: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar el aliado. Por favor, intente nuevamente.");
+            // Muestra un error en la consola y una alerta si hay una excepción durante la consulta.
+        }
+    }
+
+    private async Task ModificarAliadoConsultado()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["nit"] = consultaNit,
+            ["razon_social"] = consultaRazonSocial,
+            ["nombre_contacto"] = consultaNombreContacto,
+            ["correo"] = consultaCorreo,
+            ["telefono"] = consultaTelefono,
+            ["ciudad"] = consultaCiudad
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarAliado");
+        await Task.Delay(300); // Añade un pequeño retraso para asegurarte de que el modal se oculta completamente
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+
+        // Prepara los datos consultados para la edición y cierra el modal de consulta.
+    }
+
+    private async Task EliminarAliadoConsultado()
+    {
+        AsignarAliadoParaEliminar(new Dictionary<string, object>
+        {
+            ["nit"] = consultaNit,
+            ["razon_social"] = consultaRazonSocial,
+            ["nombre_contacto"] = consultaNombreContacto,
+            ["correo"] = consultaCorreo,
+            ["telefono"] = consultaTelefono,
+            ["ciudad"] = consultaCiudad
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarAliado");
+        await Task.Delay(300); // Añade un pequeño retraso para asegurarte de que el modal se oculta completamente
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+        // Prepara los datos consultados para la eliminación y cierra el modal de consulta.
+    }
+
+    private void AsignarAliadoParaEliminar(Dictionary<string, object> aliado)
+    {
+        aliadoActual = aliado;
+        // Aquí asegúrate de que todos los datos del aliado seleccionado se estén asignando correctamente
+        Console.WriteLine($"Aliado seleccionado para eliminar: NIT: {aliadoActual["nit"]}, Razón Social: {aliadoActual["razon_social"]}");
+        
+        ServicioJS.InvokeVoidAsync("showModal", "modalEliminarAliado");
+        // Muestra el modal para confirmar la eliminación usando JavaScript.
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

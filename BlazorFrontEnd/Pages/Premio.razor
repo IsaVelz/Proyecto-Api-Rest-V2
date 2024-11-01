@@ -1,0 +1,539 @@
+@page "/premio"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Premio</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarPremio" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Añadir Nuevo Premio</span>
+                        </a>
+                        <a href="#modalConsultarPremio" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar Premio</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (premios == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!premios.Any())
+            {
+                <p>No hay premios registrados.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Descripcion</th>
+                            <th>Fecha</th>
+                            <th>Entidad Otorgante</th>
+                            <th>Pais</th>
+                            <th>Id Programa</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var premio in premios)
+                        {
+                            <tr>
+                                <td>@premio["id"]</td>
+                                <td>@premio["nombre"]</td>
+                                <td>@premio["descripcion"]</td>
+                                <td>@premio["fecha"]</td>
+                                <td>@premio["entidad_otorgante"]</td>
+                                <td>@premio["pais"]</td>
+                                <td>@premio["programa"]</td>
+                                 
+                                <td>
+                                    <a href="#modalAgregarPremio" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(premio)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                  <a href="#modalEliminarPremio" class="delete" data-bs-toggle="modal" @onclick="() => AsignarPremioParaEliminar(premio)">
+                                        <i class="material_icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarPremio" tabindex="-1" role="dialog" aria-labelledby="modalAgregarPremioLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@premioActual" OnValidSubmit="GuardarPremio">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarPremioLabel">@(esNuevoPremio? "Añadir" : "Editar") Premio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Id</label>
+                        <InputText class="form-control" @bind-Value="id" />
+                        <ValidationMessage For="@(() => id)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <InputText class="form-control" @bind-Value="nombre" />
+                        <ValidationMessage For="@(() => nombre)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Descripcion</label>
+                        <InputText class="form-control" @bind-Value="descripcion" />
+                        <ValidationMessage For="@(() => descripcion)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <InputText class="form-control" @bind-Value="fecha" />
+                        <ValidationMessage For="@(() => fecha)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Entidad Otorgante</label>
+                        <InputText class="form-control" @bind-Value="entidad_otorgante" />
+                        <ValidationMessage For="@(() => entidad_otorgante)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Pais</label>
+                        <InputText class="form-control" @bind-Value="pais" />
+                        <ValidationMessage For="@(() => pais)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Id Programa</label>
+                        <InputText class="form-control" @bind-Value="programa" />
+                        <ValidationMessage For="@(() => programa)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevoPremio ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarPremio" tabindex="-1" role="dialog" aria-labelledby="modalEliminarPremioLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarPremioLabel">Eliminar Premio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea marcar esta Premio como inactivo?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarPremio">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsultarPremio" tabindex="-1" role="dialog" aria-labelledby="modalConsultarPremioLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarPremioLabel">Consultar Premio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" class="form-control" @bind="consultaId" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" @bind="consultaNombre" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Descripcion</label>
+                    <input type="text" class="form-control" @bind="consultaDescripcion" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="text" class="form-control" @bind="consultaFecha" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Entidad Otorgante</label>
+                    <input type="text" class="form-control" @bind="consultaEntidad_otorgante" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Pais</label>
+                    <input type="text" class="form-control" @bind="consultaPais" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Id Programa</label>
+                    <input type="text" class="form-control" @bind="consultaprograma" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarPremio">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarPremioConsultado" disabled="@(!premioEncontrado)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarPremioConsultado" disabled="@(!premioEncontrado)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> premios = new List<Dictionary<string, object>>();
+    
+    private Dictionary<string, object> premioActual = new Dictionary<string, object>();
+
+    private bool esNuevoPremio = true;
+
+    private bool premioEncontrado = false;
+
+    private string id = "";
+
+    private string nombre = "";
+
+    private string descripcion = "";
+
+    private string fecha = "";
+
+    private string entidad_otorgante = "";
+
+    private string pais = "";
+
+    private string programa = "";
+
+
+    private string consultaId = "";
+
+    private string consultaNombre = "";
+
+    private string consultaDescripcion = "";
+
+    private string consultaFecha = "";
+    private string consultaEntidad_otorgante = "";
+
+    private string consultaPais = "";
+
+    private string consultaprograma = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPremios();
+    }
+
+    private async Task CargarPremios()
+    {
+        try
+        {
+            premios = await ServicioApi.GetDataAsync("api/proyecto/premio");
+            premios = premios.Where(u => (bool)(u["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar los Premios: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al cargar los Premios. Por favor, intente nuevamente.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? premio = null)
+    {
+        esNuevoPremio = premio == null;
+        premioActual = premio ?? new Dictionary<string, object>();
+
+        id = premioActual.TryGetValue("id", out var i) ? i?.ToString() ?? "" : "";
+        nombre = premioActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        descripcion = premioActual.TryGetValue("descripcion", out var d) ? d?.ToString() ?? "" : "";
+        fecha= premioActual.TryGetValue("fecha", out var f) ? f?.ToString() ?? "" : "";
+        entidad_otorgante = premioActual.TryGetValue("entidad_otorgante", out var e) ? e?.ToString() ?? "" : "";
+        pais = premioActual.TryGetValue("pais", out var p) ? p?.ToString() ?? "" : "";
+        programa = premioActual.TryGetValue("programa", out var pp) ? pp?.ToString() ?? "" : "";
+        if(esNuevoPremio) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPremio");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarPremio");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? premio = null)
+    {
+        esNuevoPremio = premio == null;
+        premioActual = premio ?? new Dictionary<string, object>();
+
+        id = premioActual.TryGetValue("id", out var i) ? i?.ToString() ?? "" : "";
+        nombre = premioActual.TryGetValue("nombre", out var n) ? n?.ToString() ?? "" : "";
+        descripcion = premioActual.TryGetValue("descripcion", out var d) ? d?.ToString() ?? "" : "";
+        fecha= premioActual.TryGetValue("fecha", out var f) ? f?.ToString() ?? "" : "";
+        entidad_otorgante = premioActual.TryGetValue("entidad_otorgante", out var e) ? e?.ToString() ?? "" : "";
+        pais = premioActual.TryGetValue("pais", out var p) ? p?.ToString() ?? "" : "";
+        programa = premioActual.TryGetValue("programa", out var pp) ? pp?.ToString() ?? "" : "";
+ 
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPremio");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaId = "";
+        consultaNombre = "";
+        consultaDescripcion = "";
+        consultaFecha = "";
+        consultaEntidad_otorgante = "";
+        consultaPais = "";
+        consultaprograma = "";
+        premioEncontrado = false;
+    }
+
+private void AsignarPremioParaEliminar(Dictionary<string, object> premio)
+{
+    premioActual = premio;
+    Console.WriteLine($"Premio seleccionado para eliminar: Id: {premioActual["id"]}, Tipo: {premioActual["nombre"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarPremio");
+}
+
+
+    private async Task GuardarPremio()
+    {
+        try
+        {
+            premioActual["id"] = id;
+            premioActual["nombre"] = nombre;
+            premioActual["descripcion"] = descripcion;
+            premioActual["fecha"] = fecha;
+            premioActual["entidad_otorgante"] = entidad_otorgante;
+            premioActual["pais"] = pais;
+            premioActual["programa"] = programa;
+           
+            bool exito;
+            if (esNuevoPremio)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/premio", premioActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/premio/id", id, premioActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPremio");
+
+                await CargarPremios();
+
+                id = nombre = descripcion = fecha = entidad_otorgante = pais = programa = string.Empty;
+                premioActual = new Dictionary<string, object>();
+                esNuevoPremio = true;
+
+                StateHasChanged();
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el premio.Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar el premio: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el premio. Por favor, intente nuevamente.");
+        }
+    }
+
+private async Task EliminarPremio()
+{
+    try
+    {
+        if (premioActual.TryGetValue("id", out var idObj) && idObj is string idStr)
+        {
+            premioActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/premio/id",idStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarPremio");
+                await CargarPremios();
+                await ServicioJS.InvokeVoidAsync("alert", "Premio eliminado con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el premio. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar el Premio: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el Premio. Por favor, intente nuevamente.");
+    }
+}
+
+
+    private async Task ConsultarPremio()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/premio/id/{consultaId}");
+            if (resultado.Any())
+            {
+                var premioConsultado = resultado.First();
+                consultaNombre = premioConsultado["nombre"]?.ToString() ?? "";
+                consultaDescripcion = premioConsultado["descripcion"]?.ToString() ?? "";
+                consultaFecha = premioConsultado["fecha"]?.ToString() ?? "";
+                consultaEntidad_otorgante = premioConsultado["entidad_otorgante"]?.ToString() ?? "";
+                consultaPais = premioConsultado["pais"]?.ToString() ?? "";
+                consultaprograma = premioConsultado["programa"]?.ToString() ?? "";
+                premioEncontrado = true;
+            }
+            else
+            {
+                consultaNombre = "";
+                consultaDescripcion = "";
+                consultaFecha = "";
+                consultaEntidad_otorgante = "";
+                consultaPais = "";
+                consultaprograma = "";
+                premioEncontrado = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ningun premio con ese id.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar el premio: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar el premio. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarPremioConsultado()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["nombre"] = consultaNombre,
+            ["descripcion"] = consultaDescripcion,
+            ["fecha"] = consultaFecha,
+            ["entidad_otorgante"] = consultaEntidad_otorgante,
+            ["pais"] = consultaPais,
+            ["programa"] = consultaprograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarPremio");
+    }
+
+    private async Task EliminarPremioConsultado()
+    {
+        AsignarPremioParaEliminar(new Dictionary<string, object>
+        {
+             ["id"] = consultaId,
+            ["nombre"] = consultaNombre,
+            ["descripcion"] = consultaDescripcion,
+            ["fecha"] = consultaFecha,
+            ["entidad_otorgante"] = consultaEntidad_otorgante,
+            ["pais"] = consultaPais,
+            ["programa"] = consultaprograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarPremio");
+    }
+}
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

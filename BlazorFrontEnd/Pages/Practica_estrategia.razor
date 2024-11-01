@@ -1,0 +1,470 @@
+@page "/practica_estrategia"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>Practica Estrategia</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarPractica" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Añadir Nueva Practica</span>
+                        </a>
+                        <a href="#modalConsultarPractica" class="btn btn-outline-dark" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar Practica</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (practica_estrategias == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!practica_estrategias.Any())
+            {
+                <p>No hay practicas registradas.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Tipo</th>
+                            <th>Nombre</th>
+                            <th>Descripcion</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var practica_estrategia in practica_estrategias)
+                        {
+                            <tr>
+                                <td>@practica_estrategia["id"]</td>
+                                <td>@practica_estrategia["tipo"]</td>
+                                <td>@practica_estrategia["nombre"]</td>
+                                <td>@practica_estrategia["descripcion"]</td>
+                                 
+                                <td>
+                                    <a href="#modalAgregarPractica" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(practica_estrategia)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                  <a href="#modalEliminarPractica" class="delete" data-bs-toggle="modal" @onclick="() => AsignarPracticaParaEliminar(practica_estrategia)">
+                                        <i class="bi bi-trash3" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregarPractica" tabindex="-1" role="dialog" aria-labelledby="modalAgregarPracticaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@practica_estrategiaActual" OnValidSubmit="GuardarPractica">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarPracticaLabel">@(esNuevaPractica? "Añadir" : "Editar") Practica</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Id</label>
+                        <InputText class="form-control" @bind-Value="id" />
+                        <ValidationMessage For="@(() => id)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <InputText class="form-control" @bind-Value="tipo" />
+                        <ValidationMessage For="@(() => tipo)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <InputText class="form-control" @bind-Value="nombre" />
+                        <ValidationMessage For="@(() => nombre)" />
+                    </div>
+                    <div class="form-group">
+                        <label>descripcion</label>
+                        <InputText class="form-control" @bind-Value="descripcion" />
+                        <ValidationMessage For="@(() => descripcion)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevaPractica ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarPractica" tabindex="-1" role="dialog" aria-labelledby="modalEliminarPracticaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarPracticaLabel">Eliminar Practica</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea marcar esta Practica como inactiva?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarPractica">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsultarPractica" tabindex="-1" role="dialog" aria-labelledby="modalConsultarPracticaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarPracticaLabel">Consultar Practica</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Id</label>
+                    <input type="text" class="form-control" @bind="consultaId" @bind:event="oninput" />
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <input type="text" class="form-control" @bind="consultaTipo" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" class="form-control" @bind="consultaNombre" readonly />
+                </div>
+                <div class="form-group">
+                    <label>Descripcion</label>
+                    <input type="text" class="form-control" @bind="consultaDescripcion" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarPractica">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarPracticaConsultada" disabled="@(!practica_estrategiaEncontrada)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarPracticaConsultada" disabled="@(!practica_estrategiaEncontrada)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> practica_estrategias = new List<Dictionary<string, object>>();
+    
+    private Dictionary<string, object> practica_estrategiaActual = new Dictionary<string, object>();
+
+    private bool esNuevaPractica = true;
+
+    private bool practica_estrategiaEncontrada = false;
+
+    private string id = "";
+
+    private string tipo = "";
+
+    private string nombre = "";
+
+    private string descripcion = "";
+
+
+    private string consultaId = "";
+
+    private string consultaTipo = "";
+
+    private string consultaNombre = "";
+
+    private string consultaDescripcion = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPracticas();
+    }
+
+    private async Task CargarPracticas()
+    {
+        try
+        {
+            practica_estrategias = await ServicioApi.GetDataAsync("api/proyecto/practica_estrategia");
+           // practica_estrategias = practica_estrategias.Where(u => (bool)(u["IsDeleted"] ?? false)).ToList(); // Filtra solo las activas
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar las Practicas: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al cargar las Practicas. Por favor, intente nuevamente.");
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? practica_estrategia = null)
+    {
+        esNuevaPractica = practica_estrategia == null;
+        practica_estrategiaActual = practica_estrategia ?? new Dictionary<string, object>();
+
+        id = practica_estrategiaActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        tipo = practica_estrategiaActual.TryGetValue("tipo", out var n) ? n?.ToString() ?? "" : "";
+        nombre = practica_estrategiaActual.TryGetValue("nombre", out var e) ? e?.ToString() ?? "" : "";
+        descripcion = practica_estrategiaActual.TryGetValue("descripcion", out var t) ? t?.ToString() ?? "" : "";
+        if(esNuevaPractica) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPractica");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarPractica");
+        }
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object>? practica_estrategia = null)
+    {
+        esNuevaPractica = practica_estrategia == null;
+        practica_estrategiaActual = practica_estrategia ?? new Dictionary<string, object>();
+
+        id = practica_estrategiaActual.TryGetValue("id", out var c) ? c?.ToString() ?? "" : "";
+        tipo = practica_estrategiaActual.TryGetValue("tipo", out var n) ? n?.ToString() ?? "" : "";
+        nombre = practica_estrategiaActual.TryGetValue("nombre", out var e) ? e?.ToString() ?? "" : "";
+        descripcion = practica_estrategiaActual.TryGetValue("descripcion", out var t) ? t?.ToString() ?? "" : "";
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPractica");
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaId = "";
+        consultaTipo = "";
+        consultaNombre = "";
+        consultaDescripcion = "";
+        practica_estrategiaEncontrada = false;
+    }
+
+private void AsignarPracticaParaEliminar(Dictionary<string, object> practica_estrategia)
+{
+    practica_estrategiaActual = practica_estrategia;
+    Console.WriteLine($"Practica seleccionada para eliminar: Id: {practica_estrategiaActual["id"]}, Tipo: {practica_estrategiaActual["tipo"]}");
+    
+    ServicioJS.InvokeVoidAsync("showModal", "modalEliminarPractica");
+}
+
+
+    private async Task GuardarPractica()
+    {
+        try
+        {
+            practica_estrategiaActual["id"] = id;
+            practica_estrategiaActual["tipo"] = tipo;
+            practica_estrategiaActual["nombre"] = nombre;
+            practica_estrategiaActual["descripcion"] = descripcion;
+           
+            bool exito;
+            if (esNuevaPractica)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/practica_estrategia", practica_estrategiaActual);
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/practica_estrategia/id", id, practica_estrategiaActual);
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarPractica");
+
+                await CargarPracticas();
+
+                id = tipo = nombre = descripcion = string.Empty;
+                practica_estrategiaActual = new Dictionary<string, object>();
+                esNuevaPractica = true;
+
+                StateHasChanged();
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la practica.Por favor, intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar la practica: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar la practica. Por favor, intente nuevamente.");
+        }
+    }
+
+private async Task EliminarPractica()
+{
+    try
+    {
+        if (practica_estrategiaActual.TryGetValue("id", out var idObj) && idObj is string idStr)
+        {
+            practica_estrategiaActual["IsDeleted"] = true; // Cambia el estado a no activo
+            bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/practica_estrategia/id",idStr);
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarPractica");
+                await CargarPracticas();
+                await ServicioJS.InvokeVoidAsync("alert", "Practica eliminada con éxito.");
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la Practica. Por favor, intente nuevamente.");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al eliminar la practica: {ex.Message}");
+        await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar la practica. Por favor, intente nuevamente.");
+    }
+}
+
+
+    private async Task ConsultarPractica()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/practica_estrategia/id/{consultaId}");
+            if (resultado.Any())
+            {
+                var practicaConsultada = resultado.First();
+                consultaTipo = practicaConsultada["tipo"]?.ToString() ?? "";
+                consultaNombre = practicaConsultada["nombre"]?.ToString() ?? "";
+                consultaDescripcion = practicaConsultada["descripcion"]?.ToString() ?? "";
+                practica_estrategiaEncontrada = true;
+            }
+            else
+            {
+                consultaTipo = "";
+                consultaNombre = "";
+                consultaDescripcion = "";
+                practica_estrategiaEncontrada = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ninguna practica con ese id.");
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar la practica: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar la practica. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ModificarPracticaConsultada()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["tipo"] = consultaTipo,
+            ["nombre"] = consultaNombre,
+            ["descripcion"] = consultaDescripcion
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarPractica");
+    }
+
+    private async Task EliminarPracticaConsultada()
+    {
+        AsignarPracticaParaEliminar(new Dictionary<string, object>
+        {
+            ["id"] = consultaId,
+            ["tipo"] = consultaTipo,
+            ["nombre"] = consultaNombre,
+            ["descripcion"] = consultaDescripcion
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarPractica");
+    }
+}
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>

@@ -1,0 +1,467 @@
+@page "/anprograma"
+@using BlazorFrontEnd.Services
+@inject ApiService ServicioApi
+@inject IJSRuntime ServicioJS
+<div class="container-xl">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Gestionar <b>An Programas</b></h2>
+                    </div>
+                    <div class="col-sm-6">
+                        <a href="#modalAgregarAnprograma" class="btn btn-success" data-bs-toggle="modal" @onclick="() => PrepararParaAgregarOEditar()">
+                            <i class="material-icons">&#xE147;</i> <span>Nuevo</span>
+                        </a>
+                        <a href="#modalConsultarAnprograma" class="btn btn-success" data-bs-toggle="modal" @onclick="PrepararParaConsulta">
+                            <i class="material-icons">&#xE8B6;</i> <span>Consultar</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @if (anprogramas == null)
+            {
+                <p>Cargando...</p>
+            }
+            else if (!anprogramas.Any())
+            {
+                <p>No hay An Programas registrados.</p>
+            }
+            else
+            {
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Aspecto Normativo</th>
+                            <th>Programa</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var anprograma in anprogramas)
+                        {
+                            <tr>
+                                <td>@anprograma["aspecto_normativo"]</td>
+                                <td>@anprograma["programa"]</td>
+                                <td>
+                                    <a href="#modalAgregarAnprograma" class="edit" data-bs-toggle="modal" @onclick="() => PrepararParaEditar(anprograma)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Editar">&#xE254;</i>
+                                    </a>
+                                    <a href="#modalEliminarAnprograma" class="delete" data-bs-toggle="modal" @onclick="() => AsignarAnprogramaParaEliminar(anprograma)">
+                                        <i class="material-icons" data-bs-toggle="tooltip" title="Eliminar">&#xE872;</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Añadir/Editar An Programa -->
+<div class="modal fade" id="modalAgregarAnprograma" tabindex="-1" role="dialog" aria-labelledby="modalAgregarAnprogramaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <EditForm Model="@anprogramaActual" OnValidSubmit="GuardarAnprograma">
+                <DataAnnotationsValidator />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarAnprogramaLabel">@(esNuevoAnprograma ? "Añadir" : "Editar") An Programa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Aspecto Normativo</label>
+                        <InputNumber class="form-control" @bind-Value="aspectoNormativo" />
+                        <ValidationMessage For="@(() => aspectoNormativo)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Programa</label>
+                        <InputNumber class="form-control" @bind-Value="anprogramaId" />
+                        <ValidationMessage For="@(() => anprogramaId)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">@(esNuevoAnprograma ? "Añadir" : "Guardar")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Eliminar An Programa -->
+<div class="modal fade" id="modalEliminarAnprograma" tabindex="-1" role="dialog" aria-labelledby="modalEliminarAnprogramaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarAnprogramaLabel">Eliminar An Programa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar este An Programa?</p>
+                <p class="text-warning"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CancelarEliminacion">Cancelar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarAnprograma">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Consultar An Programa -->
+<div class="modal fade" id="modalConsultarAnprograma" tabindex="-1" role="dialog" aria-labelledby="modalConsultarAnprogramaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConsultarAnprogramaLabel">Consultar An Programa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Aspecto Normativo</label>
+                    <InputNumber class="form-control" @bind-Value="consultaAspectoNormativo" />
+                </div>
+                <div class="form-group">
+                    <label>Programa</label>
+                    <InputNumber class="form-control" @bind-Value="consultaAnprograma" readonly />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="ConsultarAnprograma">Consultar</button>
+                <button type="button" class="btn btn-warning" @onclick="ModificarAnprogramaConsultado" disabled="@(!anprogramaEncontrado)">Modificar</button>
+                <button type="button" class="btn btn-danger" @onclick="EliminarAnprogramaConsultado" disabled="@(!anprogramaEncontrado)">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Dictionary<string, object>> anprogramas = new List<Dictionary<string, object>>();
+    // Lista que almacena los anprogramas obtenidos desde la API
+    
+    private Dictionary<string, object> anprogramaActual = new Dictionary<string, object>();
+    // Diccionario que representa el anprograma actual que se está añadiendo o editando
+
+    private bool esNuevoAnprograma = true;
+    // Bandera que indica si se está añadiendo un nuevo anprograma o editando uno existente
+
+    private bool anprogramaEncontrado = false;
+    // Bandera que indica si un anprograma fue encontrado durante la consulta
+
+    private int aspectoNormativo;
+    // Variable que almacena el aspecto normativo durante la edición o creación
+
+    private int anprogramaId;
+    // Variable que almacena el anprograma durante la edición o creación
+
+    private int consultaAspectoNormativo;
+    // Variable que almacena el aspecto normativo que se va a consultar
+
+    private int consultaAnprograma;
+    // Variable que almacena el anprograma que se encontró durante la consulta
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAnprogramas();
+        // Método que se ejecuta al inicializar el componente. Carga la lista de anprogramas desde la API.
+    }
+
+    private async Task CancelarEliminacion()
+    {
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAnprograma");
+        await ServicioJS.InvokeVoidAsync("removeBackdrop");
+    }
+
+    private async Task CargarAnprogramas()
+    {
+        try
+        {
+            anprogramas = await ServicioApi.GetDataAsync("api/proyecto/an_programa");
+            anprogramas = anprogramas.Where(p => !(bool)(p["IsDeleted"] ?? true)).ToList(); // Filtra solo los activos
+
+            // Llama a la API para obtener la lista de anprogramas y la almacena en la variable 'anprogramas'.
+            StateHasChanged(); // Fuerza la actualización de la UI después de cargar los datos.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar anprogramas: {ex.Message}");
+            // Opcional: Log error en vez de mostrar alerta
+            // await ServicioJS.InvokeVoidAsync("console.log", "Error al cargar anprogramas."); 
+        }
+    }
+
+    private void PrepararParaAgregarOEditar(Dictionary<string, object>? anprograma = null)
+    {
+        esNuevoAnprograma = anprograma == null;
+        // Si 'anprograma' es null, significa que estamos añadiendo un nuevo anprograma. De lo contrario, estamos editando.
+        anprogramaActual = anprograma ?? new Dictionary<string, object>();
+        // Si 'anprograma' es null, inicializamos un nuevo diccionario. De lo contrario, usamos el diccionario del anprograma seleccionado.
+
+        aspectoNormativo = anprogramaActual.TryGetValue("aspecto_normativo", out var an) ? Convert.ToInt32(an) : 0;
+        anprogramaId = anprogramaActual.TryGetValue("programa", out var p) ? Convert.ToInt32(p) : 0;
+        // Extrae los valores de 'aspecto_normativo' y 'programa' de 'anprogramaActual' y los asigna a las variables correspondientes.
+        if (esNuevoAnprograma) {
+            ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAnprograma");
+        } else {
+            ServicioJS.InvokeVoidAsync("showModal", "modalAgregarAnprograma");
+        }
+        // Muestra el modal para añadir o editar anprograma usando JavaScript.
+    }
+
+    private void PrepararParaEditar(Dictionary<string, object> anprograma)
+    {
+        esNuevoAnprograma = false;
+        anprogramaActual = anprograma;
+        // Asigna el anprograma existente para su edición.
+
+        aspectoNormativo = anprogramaActual.TryGetValue("aspecto_normativo", out var an) ? Convert.ToInt32(an) : 0;
+        anprogramaId = anprogramaActual.TryGetValue("programa", out var p) ? Convert.ToInt32(p) : 0;
+        // Extrae los valores de 'aspecto_normativo' y 'programa' de 'anprogramaActual' y los asigna a las variables correspondientes.
+        ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAnprograma");
+        // Muestra el modal para editar el anprograma usando JavaScript.
+    }
+
+    private void PrepararParaConsulta()
+    {
+        consultaAspectoNormativo = 0;
+        consultaAnprograma = 0;
+        anprogramaEncontrado = false;
+        // Limpia los campos de consulta y establece 'anprogramaEncontrado' en false.
+    }
+
+    private void AsignarAnprogramaParaEliminar(Dictionary<string, object> anprograma)
+    {
+        anprogramaActual = anprograma;
+        // Aquí asegúrate de que todos los datos del anprograma seleccionado se estén asignando correctamente
+        Console.WriteLine($"Anprograma seleccionado para eliminar: Aspecto Normativo: {anprogramaActual["aspecto_normativo"]}, Programa: {anprogramaActual["programa"]}");
+        
+        ServicioJS.InvokeVoidAsync("showModal", "modalEliminarAnprograma");
+        // Muestra el modal para confirmar la eliminación usando JavaScript.
+    }
+
+    private async Task GuardarAnprograma()
+    {
+        try
+        {
+            anprogramaActual["aspecto_normativo"] = aspectoNormativo;
+            anprogramaActual["programa"] = anprogramaId;
+            // Actualiza 'anprogramaActual' con los valores actuales de los campos de entrada.
+
+            bool exito;
+            if (esNuevoAnprograma)
+            {
+                exito = await ServicioApi.AddEntityAsync("api/proyecto/an_programa", anprogramaActual);
+                // Si estamos añadiendo un nuevo anprograma, llama a la API para añadir el nuevo anprograma.
+            }
+            else
+            {
+                exito = await ServicioApi.EditEntityAsync("api/proyecto/an_programa/aspecto_normativo", aspectoNormativo.ToString(), anprogramaActual);
+                // Si estamos editando un anprograma existente, llama a la API para editarlo.
+            }
+
+            if (exito)
+            {
+                await ServicioJS.InvokeVoidAsync("hideModal", "modalAgregarAnprograma");
+                // Si la operación tiene éxito, cierra el modal.
+
+                await CargarAnprogramas();
+                // Recarga la lista de anprogramas para reflejar los cambios.
+
+                aspectoNormativo = anprogramaId = 0;
+                anprogramaActual = new Dictionary<string, object>();
+                esNuevoAnprograma = true;
+                // Limpia los campos del formulario y restablece el estado.
+
+                StateHasChanged();
+                // Fuerza la actualización de la UI.
+
+                await ServicioJS.InvokeVoidAsync("alert", "Operación realizada con éxito.");
+                // Muestra un mensaje de éxito al usuario.
+            }
+            else
+            {
+                await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el anprograma. Por favor, intente nuevamente.");
+                // Si la operación falla, muestra un mensaje de error.
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al guardar anprograma: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al guardar el anprograma. Por favor, intente nuevamente.");
+            // Muestra un error en la consola y una alerta si hay una excepción durante el guardado.
+        }
+    }
+
+    private async Task EliminarAnprograma()
+    {
+        try
+        {
+            if (anprogramaActual.TryGetValue("aspecto_normativo", out var anObj) && anObj is int anInt)
+            {
+                anprogramaActual["IsDeleted"] = true; // Cambia el estado a no activo
+                bool exito = await ServicioApi.DeleteEntityAsync($"api/proyecto/an_programa/aspecto_normativo", anInt.ToString());
+                if (exito)
+                {
+                    await ServicioJS.InvokeVoidAsync("hideModal", "modalEliminarAnprograma");
+                    await CargarAnprogramas();
+                    await ServicioJS.InvokeVoidAsync("alert", "Anprograma eliminado con éxito.");
+                }
+                else
+                {
+                    await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el anprograma. Por favor, intente nuevamente.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar anprograma: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al eliminar el anprograma. Por favor, intente nuevamente.");
+        }
+    }
+
+    private async Task ConsultarAnprograma()
+    {
+        try
+        {
+            var resultado = await ServicioApi.GetDataAsync($"api/proyecto/an_programa/aspecto_normativo/{consultaAspectoNormativo}");
+            if (resultado.Any())
+            {
+                var anprogramaConsultado = resultado.First();
+                consultaAnprograma = Convert.ToInt32(anprogramaConsultado["programa"] ?? 0);
+                anprogramaEncontrado = true;
+                // Si se encuentra un anprograma con el aspecto normativo consultado, muestra los datos en los campos correspondientes.
+            }
+            else
+            {
+                consultaAnprograma = 0;
+                anprogramaEncontrado = false;
+                await ServicioJS.InvokeVoidAsync("alert", "No se encontró ningún anprograma con ese aspecto normativo.");
+                // Si no se encuentra ningún anprograma, limpia los campos y muestra un mensaje de alerta.
+            }
+            StateHasChanged();
+            // Fuerza la actualización de la UI para reflejar los cambios.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al consultar anprograma: {ex.Message}");
+            await ServicioJS.InvokeVoidAsync("alert", "Error al consultar el anprograma. Por favor, intente nuevamente.");
+            // Muestra un error en la consola y una alerta si hay una excepción durante la consulta.
+        }
+    }
+
+    private async Task ModificarAnprogramaConsultado()
+    {
+        PrepararParaAgregarOEditar(new Dictionary<string, object>
+        {
+            ["aspecto_normativo"] = consultaAspectoNormativo,
+            ["programa"] = consultaAnprograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarAnprograma");
+        // Prepara los datos consultados para la edición y cierra el modal de consulta.
+    }
+
+    private async Task EliminarAnprogramaConsultado()
+    {
+        AsignarAnprogramaParaEliminar(new Dictionary<string, object>
+        {
+            ["aspecto_normativo"] = consultaAspectoNormativo,
+            ["programa"] = consultaAnprograma
+        });
+        await ServicioJS.InvokeVoidAsync("hideModal", "modalConsultarAnprograma");
+        // Prepara los datos consultados para la eliminación y cierra el modal de consulta.
+    }
+}
+
+<style>
+    .table-title {
+        background-color: #4C45A0;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+
+    .table thead th {
+        background-color: #BCA6DA;
+        color: #4C45A0;
+        padding: 10px;
+        font-weight: bold; 
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .table tbody td {
+        padding: 10px;
+    }
+
+    .btn-success {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-success:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .edit i,
+    .delete i {
+        font-size: 20px;
+        color: #3d5bc9;
+        margin: 0 5px;
+    }
+
+    .edit i:hover {
+        color: #BCA6DA;
+    }
+
+    .delete i:hover {
+        color: red;
+    }
+
+    .modal-header {
+        background-color: #4C45A0;
+        color: white;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        background-color: #4C45A0;
+        border-color: #4C45A0;
+    }
+
+    .btn-primary:hover,
+    .btn-danger:hover {
+        background-color: #3b368c;
+        border-color: #3b368c;
+    }
+
+    .btn-secondary {
+        background-color: #BCA6DA;
+        border-color: #BCA6DA;
+        color: #4C45A0;
+    }
+
+    .btn-secondary:hover {
+        background-color: #a394c2;
+        border-color: #a394c2;
+    }
+</style>
+
